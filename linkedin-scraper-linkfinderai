@@ -1,0 +1,612 @@
+{
+  "name": "Ultime Linkedin scraper",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -320,
+        0
+      ],
+      "id": "8872ad7f-85ee-40f3-818b-1f9764e242a4",
+      "name": "When chat message received",
+      "webhookId": "70710659-2318-4a87-abe4-5e9020f1084d"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "results",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        260,
+        0
+      ],
+      "id": "8e13e3be-acac-49cf-b692-98c4ca030c58",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1VpRchxHWPO6BGcVHda9Zi2VMfEa2iSgnL-HcaNmbEXU/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VpRchxHWPO6BGcVHda9Zi2VMfEa2iSgnL-HcaNmbEXU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('If').item.json.name }}",
+            "job": "={{ $('If').item.json.jobTitle }}",
+            "company": "={{ $('If').item.json.company }}",
+            "location ": "={{ $('If').item.json.location }}",
+            "website": "={{ $('If').item.json.website }}",
+            "email": "={{ $('If').item.json.email }}",
+            "education": "={{ $('If').item.json.education }}",
+            "headline": "={{ $('If').item.json.headline }}",
+            "linkedinurl": "={{ $('If').item.json.linkedinUrl }}",
+            "personnalized opener": "={{ $json.output }}",
+            "company description": "={{ $('Company Linkedin scraper').item.json.description }}",
+            "company size": "={{ $('Company Linkedin scraper').item.json.size }}",
+            "industry": "={{ $('Company Linkedin scraper').item.json.industry }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "job",
+              "displayName": "job",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "location ",
+              "displayName": "location ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "education",
+              "displayName": "education",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "headline",
+              "displayName": "headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "linkedinurl",
+              "displayName": "linkedinurl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "personnalized opener",
+              "displayName": "personnalized opener",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company description",
+              "displayName": "company description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company size",
+              "displayName": "company size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "ignoreTypeMismatchErrors": false,
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2460,
+        -20
+      ],
+      "id": "e3db724c-547e-4614-a13c-c10161173f4e",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "g9VmfGQduouZIgCI",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Prospect name : {{ $('If').item.json.name }}\nProspect title: {{ $('If').item.json.jobTitle }}\nProspect company: {{ $('If').item.json.company }}\nProspect location {{ $('If').item.json.location }}\nProspect education : {{ $('If').item.json.education }}\nProspect headline: {{ $('If').item.json.headline }}\n\nCompany description : {{ $json.description }}\nCompany locaton : {{ $json.location }}\ncompany size : {{ $json.size }}",
+        "options": {
+          "systemMessage": "=<task>\nYou are an expert at writing personalized email opening lines for B2B outreach. Your goal is to create a compelling, natural, and relevant opening sentence that will capture the prospect's attention and encourage them to continue reading.\n</task>\n\n<instructions>\n1. Write ONE personalized opening sentence (15-25 words maximum)\n2. Reference at least ONE specific element from the prospect data (company, role, industry, or location)\n3. Use a professional yet conversational tone\n4. Avoid generic phrases like \"I hope this email finds you well\"\n5. Make it relevant to their current position and responsibilities\n6. Do NOT use overly flattering language or exaggeration\n7. Output ONLY the opening sentence, nothing else\n</instructions>\n\n<examples>\nExample 1 (for a VP of Sales): \"I noticed your work leading sales at [Company] in the [Industry] space and wanted to share something relevant to your team's growth.\"\n\nExample 2 (for a Marketing Director): \"Given your role scaling marketing efforts at [Company], I thought you'd be interested in how similar [Industry] companies are approaching [relevant topic].\"\n\nExample 3 (location-based): \"As someone driving [function] initiatives in [Location], you're likely seeing [relevant industry trend].\"\n</examples>\n\n<output_format>\nOutput only the personalized opening sentence with no additional text, explanations, or formatting.\n</output_format>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1920,
+        -20
+      ],
+      "id": "7168a41c-942b-4729-a72d-9910beb54976",
+      "name": "AI Agent : personalization"
+    },
+    {
+      "parameters": {
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"keyword\": \"{{ $json.chatInput }} site:linkedin.com/in\",\n  \"limit\": \"100\",\n    \"page\": 1,\n    \"start\": 1\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4a7643f8-16a8-4e63-ac78-c36e491ad44c",
+      "name": "HTTP Request36"
+    },
+    {
+      "parameters": {
+        "model": "=google/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        1880,
+        240
+      ],
+      "id": "30ee6501-cb3a-4598-a71e-7ac70c03ebcb",
+      "name": "OpenAI Chat Model9",
+      "credentials": {
+        "openAiApi": {
+          "id": "nUVy4a5bkNWpvrUp",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "faabf6de-1f37-4b0f-9d3d-5ba36fed612d",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        840,
+        0
+      ],
+      "id": "878e20f2-6698-4145-872a-8be78a75d4f2",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_profile_to_linkedin_info"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.url }}"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 25,
+              "batchInterval": 25000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        0
+      ],
+      "id": "be8ce19a-c8b6-459a-bb98-717566c0953a",
+      "name": "Profile Linkedin scraper",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_company_to_linkedin_info"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.result }}"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchInterval": 10000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1480,
+        -20
+      ],
+      "id": "ae09d4f7-bf91-4abf-832d-b40f09513634",
+      "name": "Company Linkedin scraper",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.company }}"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 25,
+              "batchInterval": 5000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1140,
+        -20
+      ],
+      "id": "4aaa57f5-a2d7-408a-b1eb-8db18d081ad5",
+      "name": "Company Linkedin url",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "Enter the leads you want to scrapp \n\nExample : New york CEO small companies",
+        "height": 620,
+        "width": 340
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -220
+      ],
+      "id": "aa2164f7-9a88-4137-9d44-99c086960bf0",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Use google to find LinkedIn profiles with apify actor \n\nYOU MUST ADD THE GET CALL URL\n\nThe one to choose is RUN ACTOR AND GET DATASET from the apify actor : https://console.apify.com/actors/563JCPLOqM1kMmbbP/input",
+        "height": 600,
+        "width": 340,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        -220
+      ],
+      "id": "8639bd30-29fd-4cd0-ba80-750618b52389",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Linkedin Profile scraper tool :\n\nWe use Linfinder AI, a linkedin scraper which does not connect to your Linkedin account (so no ban risk for your Linkedin) \n\nAdd you API key to this node, you can get it here after you create an account : https://linkfinderai.com/",
+        "height": 600,
+        "width": 500,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        340,
+        -220
+      ],
+      "id": "7d6f820e-da4d-4fa2-a877-ba2dcd01c7ac",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "Linkedin Company Scrapers :\n\nWe still use Linkfinder AI : add your api key for Both nodes",
+        "height": 640,
+        "width": 620,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -240
+      ],
+      "id": "6af27566-3262-421e-8756-ebcde3cd440b",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request36",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Profile Linkedin scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent : personalization": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request36": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model9": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent : personalization",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Company Linkedin url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Profile Linkedin scraper": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Linkedin url": {
+      "main": [
+        [
+          {
+            "node": "Company Linkedin scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Linkedin scraper": {
+      "main": [
+        [
+          {
+            "node": "AI Agent : personalization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "16b0cbaa-12f5-4356-9bc2-fa6ab3075221",
+  "meta": {
+    "instanceId": "f60330b05f7488b5b1d05388dafae39e4870f8337f359bf70a3b4c76201c7e88"
+  },
+  "id": "Rldm43vcZuEAIpt4",
+  "tags": []
+}
