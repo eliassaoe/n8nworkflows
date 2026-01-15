@@ -1,0 +1,280 @@
+{
+  "name": "Linkedin scarper",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        520,
+        -20
+      ],
+      "id": "7e499bd7-2ff2-4685-b3c0-67d3a31711e0",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1EW_164-ipmXiWx8oOEt7skbM1TxWlChYf58MCl-Ti4M",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Scarper",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EW_164-ipmXiWx8oOEt7skbM1TxWlChYf58MCl-Ti4M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EW_164-ipmXiWx8oOEt7skbM1TxWlChYf58MCl-Ti4M/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Accounts": "={{ $('Listing out Linkedin URLs').item.json.url }}"
+          },
+          "matchingColumns": [
+            "Accoutns"
+          ],
+          "schema": [
+            {
+              "id": "Accounts",
+              "displayName": "Accounts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1300,
+        0
+      ],
+      "id": "9e58b882-19fc-428a-bf8f-5fcc13c64915",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ugpyltO1vW4sTXNh",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -260,
+        -20
+      ],
+      "id": "d05678d1-b8ad-4ec5-b093-b3d008e21f6e",
+      "name": "When chat message received",
+      "webhookId": "37fbbb49-5628-424e-96e8-06cf0ede7706"
+    },
+    {
+      "parameters": {
+        "jsCode": "let start = 0;  // Initial page\nconst limit =\n$input.first().json.message.content.leadCount; // Limit to fetch 500 profiles (adjust as needed) \nconst batchSize = 10; // Google Search returns 100 results per page\nconst output = [];\n\n// Loop through pages by increments of 100\nwhile (start < limit) {\n  output.push({ json: { start: start } });\n  start += batchSize;  // Increment by 100 for each page\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        -20
+      ],
+      "id": "ab55a4f5-4561-47b0-834b-d8e09479ad73",
+      "name": "Getting all pages"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the items array from the response\nconst items = $json[\"items\"]; // Access the items array directly from the response\n\n// Create an empty array to store the extracted URLs\nconst output = [];\n\nif (items && items.length > 0) {\n    // Loop over each item in the array and extract the 'link'\n    for (const item of items) {\n        if (item.link) {\n            // Push each extracted URL as a separate item in the output\n            output.push({\n                json: {\n                    url: item.link,\n                },\n            });\n        }\n    }\n}\n\nreturn output; // Return the array of URL items"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        0
+      ],
+      "id": "32cf432c-1076-4e8b-b0ac-dfdb4e445b3a",
+      "name": "Listing out Linkedin URLs"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.chatInput }}"
+            },
+            {
+              "content": "=Role:\n\nYou are a URL search term formatter for scraping LinkedIn profiles via Google Search.\n\nTask:\n\nFormat user input into a structured Google search term that includes title, industry, and location for LinkedIn profile scraping. Additionally, extract the number of leads the user wants to scrape, defaulting to 10 if unspecified.\n\nInstructions:\n\n1. Identify the job title, industry (if mentioned), and location from the user's input.\n2. Format the search term as: title+industry+location.\n- If the industry is missing, exclude it from the output.\n- Convert plural job titles to singular (e.g., \"CEOs\" → \"CEO\").\n- Replace spaces with + for proper search formatting.\n3. Extract the number of leads the user wants.\n- If a specific number is mentioned, use that.\n- If not specified, default leadCount to 10.\n4. Return the output in JSON format as:\n\n{\n  \"searchTerm\": \"formatted_search_term\",\n  \"leadCount\": number_of_leads\n}\n\nRules:\n- Preserve the order: title → industry (if available) → location.\n- Ensure the format is singular and uses + instead of spaces.\n- If no industry is provided, exclude it from the search term.\n- Always return a valid JSON response.\n\n\nExamples:\n\nInput:\nScrape CEOs in Miami, working in technology.\n\nOutput:\n\n{\n  \"searchTerm\": \"CEO+technology+Miami\",\n  \"leadCount\": 10\n}\n\nExample 2:\n\nInput:\nScrape hair dressers in Omaha.\n\nOutput:\n{\n  \"searchTerm\": \"hair+dresser+Omaha\",\n  \"leadCount\": 10\n}\n\nExample 3:\n\nInput:\nScrape 50 marketing managers in San Diego.\n\nOutput:\n{\n  \"searchTerm\": \"marketing+manager+San+Diego\",\n  \"leadCount\": 50\n}",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -60,
+        -20
+      ],
+      "id": "20554af2-1d04-48e7-a50e-cf0bfe3de3cc",
+      "name": "Format prompt into search term",
+      "credentials": {
+        "openAiApi": {
+          "id": "GgvCwcPhIr8AAP5D",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.linkfinderai.com",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {api_key_here}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "lead_full_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('Format prompt into search term').item.json.message.content.searchTerm.replace(/\\+/g, ' ') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        0
+      ],
+      "id": "34430cc1-1900-4517-825d-738a5df62429",
+      "name": "LinkFinder AI - Find LinkedIn URLs",
+      "notes": "Replaced Google Custom Search API with LinkFinder AI service for finding LinkedIn profile URLs. This service directly returns LinkedIn URLs based on the search criteria (job title, industry, location) without needing to parse Google search results."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "LinkFinder AI - Find LinkedIn URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Format prompt into search term",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Getting all pages": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listing out Linkedin URLs": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format prompt into search term": {
+      "main": [
+        [
+          {
+            "node": "Getting all pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Find LinkedIn URLs": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Listing out Linkedin URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5d940042-e45e-40dd-b439-88316df13fc0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "50618e78906785f75ac298c8b090bb3bd6406a17352da71ebb8b85e6df90fa3a"
+  },
+  "id": "K1q1Eeq88jnrBseX",
+  "tags": []
+}
