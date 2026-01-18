@@ -1,0 +1,1076 @@
+{
+  "name": "Google Maps Email Scraper Template - LinkFinder AI",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🔍 About LinkFinder AI\n\nLinkFinder AI is a powerful tool to enrich leads and companies and scrape LinkedIn without needing a LinkedIn account.\n\n**Get your API key:** https://linkfinderai.com\n\n---\n\n## 📊 What This Workflow Does\n\nThis workflow automatically scrapes business information and contact emails from Google Maps based on queries you provide. It searches Google Maps, extracts business URLs, visits each website, scrapes contact information, and enriches the data with additional company details using LinkFinder AI.\n\n**Input Required:**\n- List of Google Maps search queries (e.g., \"hollywood+dentist\", \"downtown+los+angeles+dentist\")\n- Google Sheets document and sheet name for output\n\n**Output Provided:**\n- Company names\n- Email addresses (from website scraping + LinkFinder AI enrichment)\n- Phone numbers\n- Websites\n- Employee counts\n- LinkedIn URLs\n- All data saved to Google Sheets\n\n**Workflow Steps:**\n1. Loop through each search query\n2. Search Google Maps for each query\n3. Extract business URLs from search results\n4. Filter out irrelevant URLs (Google, social media, etc.)\n5. Visit each business website\n6. Scrape emails from website content\n7. Extract company names from URLs\n8. Enrich each company with LinkFinder AI:\n   - Find additional emails\n   - Get phone numbers\n   - Get employee counts\n   - Get LinkedIn URLs\n9. Aggregate and deduplicate all data\n10. Filter out invalid/irrelevant emails\n11. Save complete enriched data to Google Sheets\n\n---\n\n## ⚙️ Setup Instructions\n\n1. **Get LinkFinder AI API Key**\n   - Visit https://linkfinderai.com\n   - Sign up and copy your API key\n\n2. **Configure All LinkFinder AI Nodes**\n   - Find each node named \"LinkFinder AI - [Service]\"\n   - Open the node settings\n   - Expand the Headers section\n   - Find the Authorization header\n   - Replace YOUR_API_KEY_HERE with your actual API key\n\n3. **Setup Google Sheets**\n   - Configure Google Sheets credentials\n   - Select your document and sheet in the \"Save to Google Sheet\" node\n   - Tutorial: https://youtu.be/O5RnWDM27M8\n\n4. **Configure Search Queries**\n   - Open the \"Run workflow\" manual trigger node\n   - Add your Google Maps search queries\n   - Use format: \"location+business+type\" (e.g., \"hollywood+dentist\")\n   - Tutorial: https://youtu.be/HaiO-UeiKBA\n\n5. **Test the Workflow**\n   - Click \"Test workflow\" button\n   - Verify all nodes execute successfully\n   - Check output data in Google Sheets\n\n6. **Activate**\n   - Once tested successfully, activate the workflow\n\n---\n\n## 🔧 LinkFinder AI Services Used\n\n- **company_name_to_email**: Finds verified company email addresses\n- **company_name_to_phone**: Gets company phone numbers\n- **company_name_to_employee_count**: Retrieves employee count data\n- **company_name_to_linkedin_url**: Finds company LinkedIn pages\n\n---\n\n## ⚠️ Important Notes\n\n- All external service dependencies removed\n- Workflow now uses ONLY LinkFinder AI and native n8n nodes\n- Achieves same functionality as original workflow PLUS additional enrichment\n- Email scraping from websites preserved\n- LinkFinder AI adds verified company data\n- API key must be configured in ALL LinkFinder AI nodes\n- Video tutorial: https://youtu.be/HaiO-UeiKBA",
+        "height": 464,
+        "width": 389,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2280,
+        -600
+      ],
+      "id": "doc-sticky-note",
+      "name": "📖 Workflow Documentation"
+    },
+    {
+      "id": "79df5316-c210-478d-a4de-35b5d31924ee",
+      "name": "Remove Duplicate URLs",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "position": [
+        -780,
+        380
+      ],
+      "parameters": {},
+      "typeVersion": 1.1
+    },
+    {
+      "id": "985ac7e3-b501-4079-a043-780677c94b52",
+      "name": "Loop over queries",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        -1080,
+        -100
+      ],
+      "parameters": {
+        "options": {}
+      },
+      "typeVersion": 3
+    },
+    {
+      "id": "3a478935-781b-4fb1-bdc7-fcf8be1334bc",
+      "name": "Search Google Maps with query",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -1380,
+        380
+      ],
+      "parameters": {
+        "url": "=https://www.google.com/maps/search/{{ $json.query }}",
+        "options": {
+          "allowUnauthorizedCerts": false
+        }
+      },
+      "executeOnce": false,
+      "typeVersion": 4.2,
+      "alwaysOutputData": false
+    },
+    {
+      "id": "477e7d55-b7d6-4b20-ac44-dd1f443e270a",
+      "name": "Scrape URLs from results",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -1180,
+        380
+      ],
+      "parameters": {
+        "jsCode": "const data = $input.first().json.data\n\nconst regex = /https?:\\/\\/[^\\/]+/g\n\nconst urls = data.match(regex)\n\nreturn urls.map(url => ({json: {url: url}}))"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "a5b67e45-a3f6-41d2-aa58-c26a441c41b2",
+      "name": "Filter irrelevant URLs",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        -980,
+        380
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "041797f2-2fe2-41dc-902a-d34050b9b304",
+              "operator": {
+                "type": "string",
+                "operation": "notRegex"
+              },
+              "leftValue": "={{ $json.url }}",
+              "rightValue": "=(google|gstatic|ggpht|schema\\.org|example\\.com|sentry-next\\.wixpress\\.com|imli\\.com|sentry\\.wixpress\\.com|ingest\\.sentry\\.io)"
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.2
+    },
+    {
+      "id": "40ec6d1f-1c98-4c9f-8499-c5893c3df7b9",
+      "name": "Request web page for URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "onError": "continueRegularOutput",
+      "position": [
+        -380,
+        460
+      ],
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "typeVersion": 4.2,
+      "alwaysOutputData": false
+    },
+    {
+      "id": "12f662a8-c55f-409a-b381-f37ab6dd3794",
+      "name": "Loop over URLs",
+      "type": "n8n-nodes-base.splitInBatches",
+      "onError": "continueErrorOutput",
+      "position": [
+        -580,
+        380
+      ],
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "typeVersion": 3
+    },
+    {
+      "id": "e6957d05-3533-48ae-9cc1-ee4ac026a2a6",
+      "name": "Loop over pages",
+      "type": "n8n-nodes-base.splitInBatches",
+      "onError": "continueErrorOutput",
+      "position": [
+        -360,
+        120
+      ],
+      "parameters": {
+        "options": {}
+      },
+      "typeVersion": 3,
+      "alwaysOutputData": false
+    },
+    {
+      "id": "018621c0-0ea9-4865-b110-b6d0727f0588",
+      "name": "Scrape emails from page",
+      "type": "n8n-nodes-base.code",
+      "onError": "continueRegularOutput",
+      "position": [
+        -200,
+        220
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $json.data\n\nconst emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.(?!png|jpg|gif|jpeg)[a-zA-Z]{2,}/g\n\nconst emails = data.match(emailRegex)\n\nreturn {json: {emails: emails}}"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "5509b8e2-a6fc-4fbe-bbc5-1bc1d5de1c98",
+      "name": "Aggregate arrays of emails",
+      "type": "n8n-nodes-base.aggregate",
+      "position": [
+        -40,
+        100
+      ],
+      "parameters": {
+        "options": {
+          "mergeLists": true
+        },
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "emails"
+            }
+          ]
+        }
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "f1f01f03-b62e-453f-b938-ffe4f9b3f4de",
+      "name": "Split out into default data structure",
+      "type": "n8n-nodes-base.splitOut",
+      "position": [
+        180,
+        100
+      ],
+      "parameters": {
+        "options": {},
+        "fieldToSplitOut": "emails"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "ec27d665-d9c1-4f10-9c52-0d5ea89cbf77",
+      "name": "Remove duplicate emails",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "position": [
+        400,
+        100
+      ],
+      "parameters": {
+        "compare": "selectedFields",
+        "options": {},
+        "fieldsToCompare": "emails"
+      },
+      "typeVersion": 1.1
+    },
+    {
+      "id": "4a071bf0-23ad-455b-b231-bafd3b32e4f8",
+      "name": "Filter irrelevant emails",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        600,
+        100
+      ],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "041797f2-2fe2-41dc-902a-d34050b9b304",
+              "operator": {
+                "type": "string",
+                "operation": "notRegex"
+              },
+              "leftValue": "={{ $json.emails }}",
+              "rightValue": "=(google|gstatic|ggpht|schema\\.org|example\\.com|sentry\\.wixpress\\.com|sentry-next\\.wixpress\\.com|ingest\\.sentry\\.io|sentry\\.io|imli\\.com)"
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.2
+    },
+    {
+      "id": "extract-company-name",
+      "name": "Extract company name from URL",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        800,
+        100
+      ],
+      "parameters": {
+        "jsCode": "const url = $json.url;\nlet companyName = '';\n\ntry {\n  const domain = new URL(url).hostname.replace('www.', '');\n  companyName = domain.split('.')[0];\n  companyName = companyName.replace(/-/g, ' ');\n  companyName = companyName.charAt(0).toUpperCase() + companyName.slice(1);\n} catch (e) {\n  companyName = 'Unknown';\n}\n\nreturn {\n  json: {\n    ...($json),\n    companyName: companyName\n  }\n};"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "linkfinder-company-email",
+      "name": "LinkFinder AI - Company Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1000,
+        100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_email"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.companyName }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "typeVersion": 4.2,
+      "notes": "Service: company_name_to_email\\n\\nFinds company email.\\n\\nGet API key: https://linkfinderai.com\\n\\nReplace YOUR_API_KEY_HERE in Authorization header"
+    },
+    {
+      "id": "linkfinder-company-phone",
+      "name": "LinkFinder AI - Company Phone",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1200,
+        100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_phone"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.companyName }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "typeVersion": 4.2,
+      "notes": "Service: company_name_to_phone\\n\\nFinds company phone.\\n\\nGet API key: https://linkfinderai.com\\n\\nReplace YOUR_API_KEY_HERE in Authorization header"
+    },
+    {
+      "id": "linkfinder-employee-count",
+      "name": "LinkFinder AI - Employee Count",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1400,
+        100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_employee_count"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.companyName }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "typeVersion": 4.2,
+      "notes": "Service: company_name_to_employee_count\\n\\nGets employee count.\\n\\nGet API key: https://linkfinderai.com\\n\\nReplace YOUR_API_KEY_HERE in Authorization header"
+    },
+    {
+      "id": "linkfinder-linkedin-url",
+      "name": "LinkFinder AI - LinkedIn URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1600,
+        100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.companyName }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "typeVersion": 4.2,
+      "notes": "Service: company_name_to_linkedin_url\\n\\nFinds company LinkedIn.\\n\\nGet API key: https://linkfinderai.com\\n\\nReplace YOUR_API_KEY_HERE in Authorization header"
+    },
+    {
+      "id": "59675faa-2b0d-4ba5-82c7-dc5dedcad31e",
+      "name": "Save to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        1800,
+        100
+      ],
+      "parameters": {
+        "columns": {
+          "value": {
+            "Company Name": "={{ $json.companyName }}",
+            "Website": "={{ $json.url }}",
+            "Scraped Email": "={{ $json.emails }}",
+            "LinkFinder Email": "={{ $('LinkFinder AI - Company Email').item.json.result }}",
+            "Phone": "={{ $('LinkFinder AI - Company Phone').item.json.result }}",
+            "Employee Count": "={{ $('LinkFinder AI - Employee Count').item.json.result }}",
+            "LinkedIn URL": "={{ $('LinkFinder AI - LinkedIn URL').item.json.result }}"
+          },
+          "schema": [
+            {
+              "id": "Company Name",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "Company Name",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Website",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "Website",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Scraped Email",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "Scraped Email",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkFinder Email",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "LinkFinder Email",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "Phone",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Employee Count",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "Employee Count",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn URL",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "LinkedIn URL",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": []
+        },
+        "options": {},
+        "operation": "append"
+      },
+      "typeVersion": 4.5
+    },
+    {
+      "id": "93437e8b-4f8d-40a1-9585-cab1b556164a",
+      "name": "Starts scraper workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -1600,
+        380
+      ],
+      "parameters": {},
+      "typeVersion": 1
+    },
+    {
+      "id": "eed77477-777d-450d-a975-4d2848b1cf55",
+      "name": "Run workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        -1320,
+        -100
+      ],
+      "parameters": {},
+      "typeVersion": 1
+    },
+    {
+      "id": "dffaf04e-d1d2-4002-9a69-f0904b61fc2d",
+      "name": "Wait between executions",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        -700,
+        0
+      ],
+      "webhookId": "40eb11a9-0f7d-4932-993e-0052b69dbf9b",
+      "parameters": {
+        "amount": 2
+      },
+      "typeVersion": 1.1
+    },
+    {
+      "id": "18787007-1d11-41b9-89c3-d5f69756eda7",
+      "name": "Execute scraper for query",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [
+        -880,
+        0
+      ],
+      "parameters": {
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        },
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $workflow.id }}"
+        }
+      },
+      "typeVersion": 1.1
+    },
+    {
+      "id": "67fcde25-05e4-437c-b799-4448baea7891",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2280,
+        -140
+      ],
+      "parameters": {
+        "color": 5,
+        "width": 740,
+        "height": 180,
+        "content": "## 🛠 Setup\n1. Get your LinkFinder AI API key from https://linkfinderai.com\n2. Configure the API key in ALL LinkFinder AI nodes (replace YOUR_API_KEY_HERE)\n3. Setup your list of queries in the \"Run workflow\" manual trigger node. Watch this [video](https://youtu.be/HaiO-UeiKBA) on how to generate the queries with ChatGPT.\n4. Choose a sheet to populate with data in the **Google Sheets node**\n5. Run the workflow and start getting enriched leads into your Google Sheets document"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "ac880457-44b4-4ff7-8440-b4107f8468bb",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -700,
+        -120
+      ],
+      "parameters": {
+        "color": 6,
+        "height": 100,
+        "content": "**Optional** 👇\nSet wait time between each query workflow execution. Default is 2 seconds."
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "d83afb3d-7b71-4b47-9b50-28837aac408c",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1600,
+        260
+      ],
+      "parameters": {
+        "width": 480,
+        "height": 100,
+        "content": "### Scraper 👇\nThis workflow will be executed in the background for each query. Click the **All executions** tab in the left sidebar to see the executions running."
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "007b621a-3d41-4358-aa45-560a3c8e3414",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1820,
+        300
+      ],
+      "parameters": {
+        "color": 4,
+        "height": 180,
+        "content": "👆\n1. Setup your **Google Sheets credentials**. Here's a [video tutorial](https://youtu.be/O5RnWDM27M8) on how to do that.\n\n2. Choose which document and sheet to save the enriched data to.\n\n3. Data includes: scraped emails + LinkFinder AI enrichment (verified emails, phone, employee count, LinkedIn)"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "fc0b837f-624c-4d25-8ed7-f787f76c785b",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1760,
+        -360
+      ],
+      "parameters": {
+        "color": 3,
+        "content": " ## ⚠️ Note\n\nA [video tutorial](https://youtu.be/HaiO-UeiKBA) for this workflow guide is available on my [Youtube channel](https://www.youtube.com/channel/UCn8xmUBunez1SsDVRfZDUGA)"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "2f8665d5-2890-4f7d-908b-9c09a66b6c93",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2280,
+        -360
+      ],
+      "parameters": {
+        "color": 7,
+        "width": 480,
+        "height": 140,
+        "content": "## Google Maps Email Scraper + LinkFinder AI\n\nThis workflow automatically scrapes and enriches business data from Google Maps. It finds emails from websites AND enriches with verified company data from LinkFinder AI."
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "7414b2ed-259d-47da-bbd1-d9ce0d64d43c",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1000,
+        540
+      ],
+      "parameters": {
+        "color": 6,
+        "width": 160,
+        "height": 100,
+        "content": "**Optional** 👆\nAdd or change the regex for filtering irrelevant URLs."
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "789c9a02-e6e7-4ea6-a7a2-acc7715b377a",
+      "name": "Sticky Note8",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        580,
+        260
+      ],
+      "parameters": {
+        "color": 6,
+        "width": 200,
+        "height": 100,
+        "content": "**Optional** 👆\nAdd or change the regex for filtering irrelevant/incorrect email addresses."
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "linkfinder-sticky",
+      "name": "LinkFinder AI Enrichment",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        980,
+        260
+      ],
+      "parameters": {
+        "color": 4,
+        "width": 660,
+        "height": 140,
+        "content": "## 🔍 LinkFinder AI Enrichment 👆\n\nThese nodes enrich each company with:\n- ✅ Verified company email\n- ✅ Phone number\n- ✅ Employee count\n- ✅ LinkedIn URL\n\n**Don't forget to add your API key from https://linkfinderai.com**"
+      },
+      "typeVersion": 1
+    }
+  ],
+  "active": false,
+  "pinData": {
+    "Run workflow": [
+      {
+        "json": {
+          "query": "hollywood+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "downtown+los+angeles+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "santa+monica+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "westwood+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "west+l.a.+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "the+valley+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "echo+park+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "culver+city+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "pasadena+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "silver+lake+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "mid-wilshire+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "beverly+hills+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "north+hills+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "south+los+angeles+dentist"
+        }
+      }
+    ]
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "connections": {
+    "Run workflow": {
+      "main": [
+        [
+          {
+            "node": "Loop over queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop over URLs": {
+      "main": [
+        [
+          {
+            "node": "Loop over pages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Request web page for URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop over pages": {
+      "main": [
+        [
+          {
+            "node": "Aggregate arrays of emails",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Scrape emails from page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop over queries": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Execute scraper for query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicate URLs": {
+      "main": [
+        [
+          {
+            "node": "Loop over URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter irrelevant URLs": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicate URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove duplicate emails": {
+      "main": [
+        [
+          {
+            "node": "Filter irrelevant emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape emails from page": {
+      "main": [
+        [
+          {
+            "node": "Loop over pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Starts scraper workflow": {
+      "main": [
+        [
+          {
+            "node": "Search Google Maps with query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait between executions": {
+      "main": [
+        [
+          {
+            "node": "Loop over queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter irrelevant emails": {
+      "main": [
+        [
+          {
+            "node": "Extract company name from URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request web page for URL": {
+      "main": [
+        [
+          {
+            "node": "Loop over URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape URLs from results": {
+      "main": [
+        [
+          {
+            "node": "Filter irrelevant URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute scraper for query": {
+      "main": [
+        [
+          {
+            "node": "Wait between executions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate arrays of emails": {
+      "main": [
+        [
+          {
+            "node": "Split out into default data structure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Google Maps with query": {
+      "main": [
+        [
+          {
+            "node": "Scrape URLs from results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split out into default data structure": {
+      "main": [
+        [
+          {
+            "node": "Remove duplicate emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract company name from URL": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Company Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Company Email": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Company Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Company Phone": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Employee Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Employee Count": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - LinkedIn URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - LinkedIn URL": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
