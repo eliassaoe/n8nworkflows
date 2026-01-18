@@ -1,0 +1,481 @@
+```json
+{
+  "name": "Steal Your Competitor's Sales Team",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🎯 Steal Your Competitor's Sales Team\n\n**What it does:** Finds ALL sales reps at your top competitors and exports their contact info - processes multiple companies at once\n\n**Input:** Array of competitor company names (e.g., [\"Salesforce\", \"HubSpot\", \"Zoho\"])\n\n**Output:** Complete list of sales reps with LinkedIn profiles, job titles, and contact info from ALL competitor companies\n\n**Scalability:** Processes unlimited companies, each returning 50-500+ sales reps\n\n**Setup:**\n1. Get API key from https://linkfinderai.com\n2. Replace YOUR_API_KEY_HERE in both LinkFinder AI nodes\n3. Edit the \"Competitor List\" node with your target companies\n4. Execute the workflow\n5. Export results to CSV or Google Sheets\n\n**Services used:**\n- company_name_to_linkedin_url\n- linkedin_company_to_employees\n\n**Perfect for:**\n- Recruiting top sales talent from competitors\n- Building targeted outreach lists\n- Competitive intelligence on sales teams\n- Poaching strategies for scaling teams\n\n**Legal note:** For recruiting/networking purposes only",
+        "height": 420,
+        "width": 380,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        250,
+        240
+      ],
+      "name": "📖 Documentation"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        680,
+        460
+      ],
+      "name": "Start Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "competitors",
+              "name": "competitors",
+              "value": "={{ [\"Salesforce\", \"HubSpot\", \"Zoho\", \"Pipedrive\", \"Close\", \"Outreach\", \"SalesLoft\", \"Apollo\", \"ZoomInfo\", \"Cognism\"] }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        460
+      ],
+      "name": "Competitor List"
+    },
+    {
+      "parameters": {
+        "batchSize": 5,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        460
+      ],
+      "name": "Split Into Batches"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.competitors }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1340,
+        460
+      ],
+      "name": "Get Company LinkedIn URL"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_company_to_employees"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.result }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        460
+      ],
+      "name": "Scrape All Employees"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract the employees array from the result\nconst employees = $input.item.json.result || [];\n\n// Return each employee as a separate item\nreturn employees.map(employee => ({\n  json: {\n    companyName: $input.item.json.competitors || 'Unknown',\n    fullName: employee.fullName || '',\n    jobTitle: employee.jobTitle || '',\n    linkedinUrl: employee.linkedinUrl || '',\n    location: employee.location || ''\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        460
+      ],
+      "name": "Extract Employees"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "id": "sales",
+              "leftValue": "={{ $json.jobTitle }}",
+              "rightValue": "sales",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "account",
+              "leftValue": "={{ $json.jobTitle }}",
+              "rightValue": "account executive",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "bdr",
+              "leftValue": "={{ $json.jobTitle }}",
+              "rightValue": "bdr",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "sdr",
+              "leftValue": "={{ $json.jobTitle }}",
+              "rightValue": "sdr",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "revenue",
+              "leftValue": "={{ $json.jobTitle }}",
+              "rightValue": "revenue",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        460
+      ],
+      "name": "Filter Sales Roles Only"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "company",
+              "name": "company",
+              "value": "={{ $json.companyName }}",
+              "type": "string"
+            },
+            {
+              "id": "name",
+              "name": "fullName",
+              "value": "={{ $json.fullName }}",
+              "type": "string"
+            },
+            {
+              "id": "title",
+              "name": "jobTitle",
+              "value": "={{ $json.jobTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "linkedin",
+              "name": "linkedinProfile",
+              "value": "={{ $json.linkedinUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "location",
+              "name": "location",
+              "value": "={{ $json.location }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2220,
+        460
+      ],
+      "name": "Format Sales Rep Data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "continue",
+              "name": "processNextBatch",
+              "value": "true",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2440,
+        460
+      ],
+      "name": "Loop Control"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "company"
+            },
+            {
+              "fieldToAggregate": "fullName"
+            },
+            {
+              "fieldToAggregate": "jobTitle"
+            },
+            {
+              "fieldToAggregate": "linkedinProfile"
+            },
+            {
+              "fieldToAggregate": "location"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2660,
+        460
+      ],
+      "name": "Aggregate All Sales Reps"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "total",
+              "name": "totalSalesReps",
+              "value": "={{ $json.company.length }}",
+              "type": "number"
+            },
+            {
+              "id": "companies",
+              "name": "companiesScraped",
+              "value": "={{ [...new Set($json.company)].length }}",
+              "type": "number"
+            },
+            {
+              "id": "data",
+              "name": "salesRepsData",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "message",
+              "name": "summary",
+              "value": "={{ 'Found ' + $json.company.length + ' sales reps across ' + [...new Set($json.company)].length + ' competitor companies. Ready to export!' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2880,
+        460
+      ],
+      "name": "Final Results"
+    }
+  ],
+  "connections": {
+    "Start Workflow": {
+      "main": [
+        [
+          {
+            "node": "Competitor List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Competitor List": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Into Batches": {
+      "main": [
+        [
+          {
+            "node": "Get Company LinkedIn URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Company LinkedIn URL": {
+      "main": [
+        [
+          {
+            "node": "Scrape All Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape All Employees": {
+      "main": [
+        [
+          {
+            "node": "Extract Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Employees": {
+      "main": [
+        [
+          {
+            "node": "Filter Sales Roles Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Sales Roles Only": {
+      "main": [
+        [
+          {
+            "node": "Format Sales Rep Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Sales Rep Data": {
+      "main": [
+        [
+          {
+            "node": "Loop Control",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Control": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate All Sales Reps": {
+      "main": [
+        [
+          {
+            "node": "Final Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}
+```
