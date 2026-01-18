@@ -1,0 +1,441 @@
+{
+  "name": "LinkedIn Post Engagement → Instant Lead List",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🔍 LinkedIn Post Engagement → Instant Lead List\n\n**What it does:** Scrapes ALL people who engaged with a LinkedIn post (likes, comments, shares) and enriches each profile with full contact data. Processes 100+ leads per post.\n\n**Input:** LinkedIn post URL (any post with high engagement)\n\n**Output:** Complete list of engaged leads with:\n- Full name\n- Job title\n- Company name\n- Email address\n- Phone number\n- LinkedIn profile URL\n- Location\n\n**Scalability:** Processes unlimited reactions in batches of 10\n\n**Setup:**\n1. Get API key from https://linkfinderai.com\n2. Replace YOUR_API_KEY_HERE in both LinkFinder AI nodes\n3. Paste LinkedIn post URL in Input node\n4. Execute workflow\n5. Export enriched leads to CSV/CRM\n\n**Services used:**\n- linkedin_post_to_reactions (scrape all engagers)\n- linkedin_profile_to_linkedin_info (enrich each profile)\n\n**Perfect for:**\n- Mining competitors' viral posts for leads\n- Finding decision-makers engaging with industry content\n- Building targeted outreach lists from warm audiences\n- Competitor analysis and lead generation\n\n**Pro tip:** Posts with 1,000+ reactions = 1,000+ pre-qualified leads who care about the topic!",
+        "height": 420,
+        "width": 380,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -80
+      ],
+      "name": "📖 Documentation",
+      "id": "bfb489da-22aa-4650-8ff8-c255f4bd2bc9"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 78Z4aZ4cZ76Z6fZ68Z61Z56Z6dZ69Z59Z5aZ71Z3aZ80Z6b"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_post_to_reactions"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json['Linkedin post url'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        144
+      ],
+      "name": "LinkFinder AI - Scrape All Reactions",
+      "id": "c363f5d0-6312-46f1-84be-34996ffc730a"
+    },
+    {
+      "parameters": {
+        "batchSize": 5,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1200,
+        144
+      ],
+      "name": "Split Into Batches",
+      "id": "be7b4642-c929-4bda-8551-578ba4b789ad"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 78Z4aZ4cZ76Z6fZ68Z61Z56Z6dZ69Z59Z5aZ71Z3aZ80Z6b"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_profile_to_linkedin_info"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.link }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1520,
+        144
+      ],
+      "name": "LinkFinder AI - Enrich Profile",
+      "id": "c25170e1-d95f-430a-a3ee-a70466156ba9"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "hasEmail",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        144
+      ],
+      "name": "Filter - Has Email",
+      "id": "36ef0059-7605-4d1f-beea-ce4e4f78edb4"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fullName",
+              "name": "fullName",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "email",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "phone",
+              "name": "phone",
+              "value": "={{ $json.mobileNumber }}",
+              "type": "string"
+            },
+            {
+              "id": "jobTitle",
+              "name": "jobTitle",
+              "value": "={{ $json.jobTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "companyName",
+              "name": "companyName",
+              "value": "={{ $json.company }}",
+              "type": "string"
+            },
+            {
+              "id": "linkedinUrl",
+              "name": "linkedinUrl",
+              "value": "={{ $json.linkedinUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "location",
+              "name": "location",
+              "value": "={{ $json.location }}",
+              "type": "string"
+            },
+            {
+              "id": "enrichedAt",
+              "name": "enrichedAt",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1984,
+        144
+      ],
+      "name": "Format Lead Data",
+      "id": "6e65e3bd-9c4b-425d-a297-99bcd74c3a2a"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1-zEAz1tRnPhB7ykiE0kW50eChF2-8zhiYiF9-X7DZ0Y",
+          "mode": "list",
+          "cachedResultName": "Lead post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-zEAz1tRnPhB7ykiE0kW50eChF2-8zhiYiF9-X7DZ0Y/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-zEAz1tRnPhB7ykiE0kW50eChF2-8zhiYiF9-X7DZ0Y/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.fullName }}",
+            "email": "={{ $json.email }}",
+            "phone": "={{ $json.phone }}",
+            "job": "={{ $json.jobTitle }}",
+            "company": "={{ $json.companyName }}",
+            "linkedin url": "={{ $json.linkedinUrl }}",
+            "location": "={{ $json.location }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job",
+              "displayName": "job",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedin url",
+              "displayName": "linkedin url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2144,
+        -128
+      ],
+      "id": "fd7e68e0-48eb-4874-8808-030138259632",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o8l5meOpqkwP3c5u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Input linkedin post url",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Linkedin post url"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        544,
+        144
+      ],
+      "id": "89b9a7cf-3cdb-449e-8fa8-a7de83721389",
+      "name": "Input linkedin post url",
+      "webhookId": "a045589c-7668-4e3c-878b-36df5af821ee"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "LinkFinder AI - Scrape All Reactions": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Into Batches": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LinkFinder AI - Enrich Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Enrich Profile": {
+      "main": [
+        [
+          {
+            "node": "Filter - Has Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter - Has Email": {
+      "main": [
+        [
+          {
+            "node": "Format Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Lead Data": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input linkedin post url": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Scrape All Reactions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": -1,
+    "availableInMCP": false
+  },
+  "versionId": "ac32e4ea-3281-443a-917f-fbea64ae9a5e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "id": "XnGC7aZK7RaQMfoP",
+  "tags": []
+}
