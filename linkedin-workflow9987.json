@@ -1,0 +1,242 @@
+{
+  "name": "Batch Lead Finder - Names to LinkedIn Profiles",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🔍 Batch Lead Finder\\n\\n**What it does:** Converts a list of names + companies into fully enriched LinkedIn profiles\\n\\n**Input:** Array of leads with name and company (processes 50+ leads)\\n\\n**Output:** Complete LinkedIn profiles with email, job title, company info for ALL leads\\n\\n**Scalability:** Processes leads in batches of 10, handles 100+ leads efficiently\\n\\n**Setup:**\\n1. Get API key from https://linkfinderai.com\\n2. Replace YOUR_API_KEY_HERE in all LinkFinder AI nodes\\n3. Edit input data with your lead list\\n4. Test the workflow\\n\\n**Services used:** lead_full_name_to_linkedin_url, linkedin_profile_to_linkedin_info\\n\\n**Perfect for:** B2B lead enrichment, sales prospecting, building contact databases at scale",
+        "height": 420,
+        "width": 380,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "name": "📖 Documentation",
+      "id": "a3d86e65-d7f8-4002-a2a7-e09af9764bf2"
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        880,
+        224
+      ],
+      "name": "Split Into Batches",
+      "id": "da3d4179-67ec-4e0c-b0bd-6d72a2c9daab"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 78Z4aZ4cZ76Z6fZ68Z61Z56Z6dZ69Z59Z5aZ71Z3aZ80Z6b"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "lead_full_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.Name }} {{ $json.Company }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1104,
+        224
+      ],
+      "name": "LinkFinder AI - Find LinkedIn URL",
+      "id": "5ca12eab-f13d-426a-b330-d8b539b60de6"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 78Z4aZ4cZ76Z6fZ68Z61Z56Z6dZ69Z59Z5aZ71Z3aZ80Z6b"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_profile_to_linkedin_info"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.result }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1312,
+        224
+      ],
+      "name": "LinkFinder AI - Get Full Profile",
+      "id": "2960e103-f691-4ef2-81a2-c76c7dc49b9f"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1728,
+        0
+      ],
+      "name": "Aggregate All Results",
+      "id": "18198c9c-2786-45a1-9fd3-6ac2b11df9d1"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "185LADABfLn4ZX2xcgn-cc4p5K0sjyS3fOjtl0nyIPMc",
+          "mode": "list",
+          "cachedResultName": "lead to find linkedin ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/185LADABfLn4ZX2xcgn-cc4p5K0sjyS3fOjtl0nyIPMc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/185LADABfLn4ZX2xcgn-cc4p5K0sjyS3fOjtl0nyIPMc/edit#gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        544,
+        224
+      ],
+      "id": "9762131a-4fe2-4ca3-8a78-d71465a803c3",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "mi5z7FRamyMvmQoQ",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Split Into Batches": {
+      "main": [
+        [
+          {
+            "node": "Aggregate All Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LinkFinder AI - Find LinkedIn URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Find LinkedIn URL": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get Full Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get Full Profile": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate All Results": {
+      "main": [
+        []
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "19132110-ae13-4bc8-9244-a28ea9daad53",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "id": "Bc7pTYkFIlYZtYKG",
+  "tags": []
+}
