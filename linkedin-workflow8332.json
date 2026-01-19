@@ -1,0 +1,634 @@
+```json
+{
+  "name": "Hiring Manager Treasure Map",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🎯 Hiring Manager Treasure Map\n\n**What it does:** Transforms LinkedIn job posts into qualified sales leads by identifying hiring managers and enriching company data. Processes MULTIPLE job posts to find dozens of warm leads.\n\n**Input:** Array of LinkedIn job post URLs (10-50 posts)\n\n**Output:** Enriched list of hiring managers with:\n- Full name & LinkedIn profile\n- Company details & employee count\n- Company email for outreach\n- Growth signals from hiring activity\n\n**Scalability:** Processes 10 job posts at a time, each yielding 5-20 engagers = 50-200 qualified leads per run\n\n**Setup:**\n1. Get API key from https://linkfinderai.com\n2. Replace YOUR_API_KEY_HERE in all LinkFinder AI nodes\n3. Add LinkedIn job post URLs to input array\n4. Execute workflow\n5. Export enriched leads to your CRM\n\n**Services used:**\n- linkedin_post_to_reactions (scrape engagers)\n- lead_full_name_to_linkedin_url (find profiles)\n- company_name_to_linkedin_url (get company page)\n- linkedin_company_to_linkedin_info (company details)\n- company_name_to_email (decision-maker email)\n\n**Perfect for:**\n- SaaS sales teams targeting growing companies\n- HR tech vendors finding active recruiters\n- B2B tool providers identifying expansion signals\n- Sales reps building warm lead lists at scale",
+        "height": 520,
+        "width": 420,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        250,
+        240
+      ],
+      "name": "📖 Documentation"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        680,
+        460
+      ],
+      "name": "Start Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "jobPosts",
+              "name": "jobPosts",
+              "value": "={{ [\"https://www.linkedin.com/posts/company-recruiting_hiring-activity-12345\", \"https://www.linkedin.com/posts/tech-startup_jobs-activity-67890\", \"https://www.linkedin.com/posts/saas-company_careers-activity-11111\", \"https://www.linkedin.com/posts/growth-company_openings-activity-22222\", \"https://www.linkedin.com/posts/enterprise_talent-activity-33333\", \"https://www.linkedin.com/posts/startup_recruiting-activity-44444\", \"https://www.linkedin.com/posts/company_newroles-activity-55555\", \"https://www.linkedin.com/posts/business_hiring-activity-66666\", \"https://www.linkedin.com/posts/tech_jobpost-activity-77777\", \"https://www.linkedin.com/posts/saas_expansion-activity-88888\"] }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        460
+      ],
+      "name": "Input - Job Post URLs"
+    },
+    {
+      "parameters": {
+        "batchSize": 5,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        460
+      ],
+      "name": "Split Into Batches"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_post_to_reactions"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.jobPosts }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1340,
+        460
+      ],
+      "name": "LinkFinder AI - Scrape Post Engagers"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "engagers",
+              "name": "engagers",
+              "value": "={{ $json.result }}",
+              "type": "array"
+            },
+            {
+              "id": "postUrl",
+              "name": "originalPost",
+              "value": "={{ $('Split Into Batches').item.json.jobPosts }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1560,
+        460
+      ],
+      "name": "Extract Engagers Array"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "engager",
+              "name": "engager",
+              "value": "={{ $json.engagers }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1780,
+        460
+      ],
+      "name": "Loop Through Engagers"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "lead_full_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.engager.name + ' ' + $json.engager.company }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2000,
+        460
+      ],
+      "name": "LinkFinder AI - Find Profile URL"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('Loop Through Engagers').item.json.engager.company }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2220,
+        460
+      ],
+      "name": "LinkFinder AI - Get Company LinkedIn"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_company_to_linkedin_info"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.result }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2440,
+        460
+      ],
+      "name": "LinkFinder AI - Get Company Details"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_email"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('Loop Through Engagers').item.json.engager.company }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2660,
+        460
+      ],
+      "name": "LinkFinder AI - Get Company Email"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "leadName",
+              "name": "leadName",
+              "value": "={{ $('Loop Through Engagers').item.json.engager.name }}",
+              "type": "string"
+            },
+            {
+              "id": "leadTitle",
+              "name": "leadTitle",
+              "value": "={{ $('Loop Through Engagers').item.json.engager.title }}",
+              "type": "string"
+            },
+            {
+              "id": "leadLinkedIn",
+              "name": "leadLinkedIn",
+              "value": "={{ $('LinkFinder AI - Find Profile URL').item.json.result }}",
+              "type": "string"
+            },
+            {
+              "id": "companyName",
+              "name": "companyName",
+              "value": "={{ $('Loop Through Engagers').item.json.engager.company }}",
+              "type": "string"
+            },
+            {
+              "id": "companyLinkedIn",
+              "name": "companyLinkedIn",
+              "value": "={{ $('LinkFinder AI - Get Company LinkedIn').item.json.result }}",
+              "type": "string"
+            },
+            {
+              "id": "companySize",
+              "name": "companySize",
+              "value": "={{ $json.size }}",
+              "type": "string"
+            },
+            {
+              "id": "companyIndustry",
+              "name": "companyIndustry",
+              "value": "={{ $json.industry }}",
+              "type": "string"
+            },
+            {
+              "id": "companyWebsite",
+              "name": "companyWebsite",
+              "value": "={{ $json.website }}",
+              "type": "string"
+            },
+            {
+              "id": "companyEmail",
+              "name": "companyEmail",
+              "value": "={{ $('LinkFinder AI - Get Company Email').item.json.result }}",
+              "type": "string"
+            },
+            {
+              "id": "originalJobPost",
+              "name": "originalJobPost",
+              "value": "={{ $('Extract Engagers Array').item.json.originalPost }}",
+              "type": "string"
+            },
+            {
+              "id": "buyingSignal",
+              "name": "buyingSignal",
+              "value": "Engaged with hiring post - active recruitment phase",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2880,
+        460
+      ],
+      "name": "Format Enriched Lead"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "leadName"
+            },
+            {
+              "fieldToAggregate": "leadTitle"
+            },
+            {
+              "fieldToAggregate": "leadLinkedIn"
+            },
+            {
+              "fieldToAggregate": "companyName"
+            },
+            {
+              "fieldToAggregate": "companyLinkedIn"
+            },
+            {
+              "fieldToAggregate": "companySize"
+            },
+            {
+              "fieldToAggregate": "companyIndustry"
+            },
+            {
+              "fieldToAggregate": "companyWebsite"
+            },
+            {
+              "fieldToAggregate": "companyEmail"
+            },
+            {
+              "fieldToAggregate": "originalJobPost"
+            },
+            {
+              "fieldToAggregate": "buyingSignal"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        3100,
+        460
+      ],
+      "name": "Aggregate All Leads"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "totalLeads",
+              "name": "totalLeadsFound",
+              "value": "={{ $json.leadName.length }}",
+              "type": "number"
+            },
+            {
+              "id": "totalPosts",
+              "name": "jobPostsScraped",
+              "value": "={{ $('Input - Job Post URLs').item.json.jobPosts.length }}",
+              "type": "number"
+            },
+            {
+              "id": "avgLeads",
+              "name": "avgLeadsPerPost",
+              "value": "={{ Math.round($json.leadName.length / $('Input - Job Post URLs').item.json.jobPosts.length) }}",
+              "type": "number"
+            },
+            {
+              "id": "enrichedData",
+              "name": "enrichedLeads",
+              "value": "={{ $json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3320,
+        460
+      ],
+      "name": "Final Results Summary"
+    }
+  ],
+  "connections": {
+    "Start Workflow": {
+      "main": [
+        [
+          {
+            "node": "Input - Job Post URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input - Job Post URLs": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Into Batches": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Scrape Post Engagers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Scrape Post Engagers": {
+      "main": [
+        [
+          {
+            "node": "Extract Engagers Array",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Engagers Array": {
+      "main": [
+        [
+          {
+            "node": "Loop Through Engagers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Through Engagers": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Find Profile URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Find Profile URL": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get Company LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get Company LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get Company Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get Company Details": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get Company Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get Company Email": {
+      "main": [
+        [
+          {
+            "node": "Format Enriched Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Enriched Lead": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate All Leads": {
+      "main": [
+        [
+          {
+            "node": "Final Results Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}
+```
