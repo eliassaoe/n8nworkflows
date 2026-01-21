@@ -1,0 +1,406 @@
+{
+  "name": "Competitor Employee Database Builder",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🔍 Competitor Employee Database Builder\n\n**What it does:** Builds a complete enriched database of ALL employees from any company using LinkedIn data. Processes hundreds of employee profiles in batches.\n\n**Input:** Single company name (e.g., \"Salesforce\", \"HubSpot\", \"Stripe\")\n\n**Output:** Fully enriched database with name, title, location, experience, skills, education for ALL employees\n\n**Scalability:** Processes 100-500+ employees per company in batches of 10\n\n**Setup:**\n1. Get API key from https://linkfinderai.com\n2. Replace YOUR_API_KEY_HERE in all LinkFinder AI nodes\n3. Connect your Google Sheets (or other database)\n4. Edit company name in input node\n5. Run workflow\n\n**Services used:**\n- company_name_to_linkedin_url\n- linkedin_company_to_employees\n- linkedin_profile_to_linkedin_info\n\n**Perfect for:** Competitive intelligence, sales prospecting, talent mapping, market research teams processing entire company databases",
+        "height": 420,
+        "width": 380,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [250, 240],
+      "name": "📖 Documentation"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [680, 460],
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "company_name",
+              "name": "company_name",
+              "value": "Salesforce",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [900, 460],
+      "name": "Set Company Name"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.company_name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 460],
+      "name": "LinkFinder AI - Get Company LinkedIn URL"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_company_to_employees"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.result }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 460],
+      "name": "LinkFinder AI - Get All Employees"
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1560, 460],
+      "name": "Split Into Batches"
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1780, 460],
+      "name": "Wait 2 Seconds"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_profile_to_linkedin_info"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.result }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 460],
+      "name": "LinkFinder AI - Get Employee Profile"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "full_name",
+              "name": "full_name",
+              "value": "={{ $json.fullName || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "job_title",
+              "name": "job_title",
+              "value": "={{ $json.jobTitle || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "company",
+              "name": "company",
+              "value": "={{ $json.companyName || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "location",
+              "name": "location",
+              "value": "={{ $json.location || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "linkedin_url",
+              "name": "linkedin_url",
+              "value": "={{ $json.linkedinUrl || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "email",
+              "name": "email",
+              "value": "={{ $json.email || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "skills",
+              "name": "skills",
+              "value": "={{ $json.skills ? $json.skills.join(', ') : 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "scraped_date",
+              "name": "scraped_date",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2220, 460],
+      "name": "Format Employee Data"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "full_name": "={{ $json.full_name }}",
+            "job_title": "={{ $json.job_title }}",
+            "company": "={{ $json.company }}",
+            "location": "={{ $json.location }}",
+            "linkedin_url": "={{ $json.linkedin_url }}",
+            "email": "={{ $json.email }}",
+            "skills": "={{ $json.skills }}",
+            "scraped_date": "={{ $json.scraped_date }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2440, 460],
+      "name": "Save to Google Sheets"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "total_processed",
+              "name": "total_processed",
+              "value": "={{ $json.full_name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2660, 460],
+      "name": "Loop Back Connector"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Company Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Company Name": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get Company LinkedIn URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get Company LinkedIn URL": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get All Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get All Employees": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Into Batches": {
+      "main": [
+        [
+          {
+            "node": "Wait 2 Seconds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2 Seconds": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get Employee Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get Employee Profile": {
+      "main": [
+        [
+          {
+            "node": "Format Employee Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Employee Data": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Loop Back Connector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Back Connector": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}
