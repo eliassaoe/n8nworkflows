@@ -1,0 +1,642 @@
+{
+  "name": "CRM Database Cleanup - Multi-Contact Enrichment",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🔍 CRM Database Cleanup Workflow\n\n**What it does:** Processes MULTIPLE stale CRM contacts (500+) and enriches each with fresh LinkedIn + company data\n\n**Input:** Array of contacts from CRM (firstname, lastname, company, existing data)\n\n**Output:** Fully enriched contact records with LinkedIn profiles, company websites, phones, and emails\n\n**Scalability:** Processes contacts in batches of 10, handles 500+ records per execution\n\n**Setup:**\n1. Get API key from https://linkfinderai.com\n2. Replace YOUR_API_KEY_HERE in all LinkFinder AI nodes\n3. Configure your CRM credentials\n4. Set up Google Sheets for logging\n5. Test with small batch first\n\n**Services used:**\n- lead_full_name_to_linkedin_url\n- linkedin_profile_to_linkedin_info\n- company_name_to_website\n- company_name_to_phone\n- company_name_to_email\n\n**Perfect for:** Sales teams cleaning 100s of outdated CRM records, enriching lead lists at scale, maintaining data quality across large databases\n\n**Processing time:** ~30-60 minutes for 500 contacts (rate limited for API stability)",
+        "height": 928,
+        "width": 436,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -192
+      ],
+      "name": "📖 Documentation",
+      "id": "9cab29e7-7297-4c84-8581-8e24f55ced27"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        880,
+        224
+      ],
+      "name": "Split Into Batches",
+      "id": "164aad19-a148-457d-a72d-fddfd82684e3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "first_name",
+              "name": "full_name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "company",
+              "name": "company",
+              "value": "={{ $json.company }}",
+              "type": "string"
+            },
+            {
+              "id": "current_email",
+              "name": "current_email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "current_phone",
+              "name": "current_phone",
+              "value": "={{ $json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "current_linkedin",
+              "name": "current_linkedin",
+              "value": "={{ $json['linkedin url'] }}",
+              "type": "string"
+            },
+            {
+              "id": "company_clean",
+              "name": "company_clean",
+              "value": "={{ $json.company.replace(/\\s+(Inc\\.|LLC|Ltd\\.)$/gi, '').trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1104,
+        224
+      ],
+      "name": "Prepare Contact Data",
+      "id": "51472880-9f9a-4e81-9fdf-7baee840b652"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 78Z4aZ4cZ76Z6fZ68Z61Z56Z6dZ69Z59Z5aZ71Z3aZ80Z6b"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "lead_full_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.full_name }} {{ $json.company }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1312,
+        224
+      ],
+      "name": "LinkFinder AI - Get LinkedIn URL",
+      "id": "747ecfea-0462-431a-a358-6e751e33b81a"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 78Z4aZ4cZ76Z6fZ68Z61Z56Z6dZ69Z59Z5aZ71Z3aZ80Z6b"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_profile_to_linkedin_info"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('LinkFinder AI - Get LinkedIn URL').item.json.result || $('Prepare Contact Data').item.json.current_linkedin }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1536,
+        224
+      ],
+      "name": "LinkFinder AI - Scrape Profile",
+      "id": "660131ab-df85-4f84-999c-e39301aa86b2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 78Z4aZ4cZ76Z6fZ68Z61Z56Z6dZ69Z59Z5aZ71Z3aZ80Z6b"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_website"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('Prepare Contact Data').item.json.company_clean }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        224
+      ],
+      "name": "LinkFinder AI - Company Website",
+      "id": "98dfa261-3d40-45af-9dbb-0d0487f8031a"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 78Z4aZ4cZ76Z6fZ68Z61Z56Z6dZ69Z59Z5aZ71Z3aZ80Z6b"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_phone"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('Prepare Contact Data').item.json.company_clean }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1984,
+        224
+      ],
+      "name": "LinkFinder AI - Company Phone",
+      "id": "3cd5e77e-4ef5-431b-9005-5469af9f8563"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 78Z4aZ4cZ76Z6fZ68Z61Z56Z6dZ69Z59Z5aZ71Z3aZ80Z6b"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_email"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('Prepare Contact Data').item.json.company_clean }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2192,
+        224
+      ],
+      "name": "LinkFinder AI - Company Email",
+      "id": "1be57550-9025-4ec9-aa50-1007518cfbc7"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1-zEAz1tRnPhB7ykiE0kW50eChF2-8zhiYiF9-X7DZ0Y",
+          "mode": "list",
+          "cachedResultName": "Lead post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-zEAz1tRnPhB7ykiE0kW50eChF2-8zhiYiF9-X7DZ0Y/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-zEAz1tRnPhB7ykiE0kW50eChF2-8zhiYiF9-X7DZ0Y/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "linkedin url": "={{ $('LinkFinder AI - Scrape Profile').item.json.linkedinUrl }}",
+            "email": "={{ $('LinkFinder AI - Scrape Profile').item.json.email }}",
+            "name": "={{ $('LinkFinder AI - Scrape Profile').item.json.name }}",
+            "job": "={{ $('LinkFinder AI - Scrape Profile').item.json.jobTitle }}",
+            "phone": "={{ $('LinkFinder AI - Scrape Profile').item.json.phone }}",
+            "company_linkedin ": "={{ $('LinkFinder AI - Scrape Profile').item.json.company_linkedin_url }}",
+            "company_size": "={{ $('LinkFinder AI - Scrape Profile').item.json.company_size }}",
+            "company_phone": "={{ $('LinkFinder AI - Company Phone').item.json.result }}",
+            "company_email": "={{ $('LinkFinder AI - Company Email').item.json.result }}",
+            "company": "={{ $('LinkFinder AI - Scrape Profile').item.json.company }}",
+            "location": "={{ $('LinkFinder AI - Scrape Profile').item.json.location }}",
+            "website": "={{ $('LinkFinder AI - Company Website').item.json.result }}"
+          },
+          "matchingColumns": [
+            "linkedin url"
+          ],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job",
+              "displayName": "job",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedin url",
+              "displayName": "linkedin url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company_email",
+              "displayName": "company_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company_phone",
+              "displayName": "company_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company_size",
+              "displayName": "company_size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company_linkedin ",
+              "displayName": "company_linkedin ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1776,
+        -336
+      ],
+      "id": "6935e17a-dc7d-43aa-a371-6548af9ef617",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o8l5meOpqkwP3c5u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "**Setup:**\n1. Get API key from https://linkfinderai.com\n2. Replace YOUR_API_KEY_HERE in all LinkFinder AI nodes\n3. Configure your CRM credentials\n4. Set up Google Sheets for logging\n5. Test with small batch first",
+        "height": 176,
+        "width": 436,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        -16
+      ],
+      "name": "📖 Documentation1",
+      "id": "9b4e58dd-725e-477d-a1dc-966786119bc1"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1-zEAz1tRnPhB7ykiE0kW50eChF2-8zhiYiF9-X7DZ0Y",
+          "mode": "list",
+          "cachedResultName": "Lead post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-zEAz1tRnPhB7ykiE0kW50eChF2-8zhiYiF9-X7DZ0Y/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-zEAz1tRnPhB7ykiE0kW50eChF2-8zhiYiF9-X7DZ0Y/edit#gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        544,
+        224
+      ],
+      "id": "8fbefebb-b4ee-45d0-ab24-329c3d27fa84",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "mi5z7FRamyMvmQoQ",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Split Into Batches": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Contact Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Contact Data": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get LinkedIn URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get LinkedIn URL": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Scrape Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Scrape Profile": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Company Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Company Website": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Company Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Company Phone": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Company Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Company Email": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b19dbd5e-33bc-4290-acf4-1ecf6e3fe2a7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "id": "6tH9SkivD3One7oi",
+  "tags": []
+}
