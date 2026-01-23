@@ -1,0 +1,567 @@
+{
+  "name": "LinkedIn Job Scraper → Sales Intelligence",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🔍 LinkedIn Job Scraper → Sales Intelligence Workflow\n\n**What it does:** Scrapes LinkedIn for companies posting specific jobs, identifies buying signals, enriches MULTIPLE companies with contact data\n\n**Input:** Job title keywords (processes 50-100+ companies per run)\n\n**Output:** Enriched company list with website, phone, email, employee count for ALL companies\n\n**Scalability:** Processes 40-50 companies in batches, ~4-6 minutes total\n\n**Setup:**\n1. Get Apify API key from https://console.apify.com/account/integrations\n2. Get LinkFinder AI key from https://linkfinderai.com\n3. Replace YOUR_APIFY_API_KEY in Node 3\n4. Replace YOUR_LINKFINDER_API_KEY in Nodes 7-10\n5. Configure Google Sheets connection\n6. Edit job search parameters in Node 2\n7. Test the workflow\n\n**Services used:** Apify LinkedIn Job Scraper, company_name_to_website, company_name_to_phone, company_name_to_employee_count, company_name_to_email\n\n**Perfect for:** Sales teams identifying companies actively hiring (buying signal), building targeted outreach lists at scale",
+        "height": 420,
+        "width": 380,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [250, 240],
+      "name": "📖 Documentation"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [680, 460],
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "job_keywords",
+              "name": "job_keywords",
+              "value": "Sales Development Representative",
+              "type": "string"
+            },
+            {
+              "id": "location",
+              "name": "location",
+              "value": "United States",
+              "type": "string"
+            },
+            {
+              "id": "max_jobs",
+              "name": "max_jobs",
+              "value": "100",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [900, 460],
+      "name": "Set Search Parameters"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/happitap~linkedin-job-scraper/runs",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_APIFY_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "keywords",
+              "value": "={{ $json.job_keywords }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $json.location }}"
+            },
+            {
+              "name": "maxJobs",
+              "value": "={{ $json.max_jobs }}"
+            },
+            {
+              "name": "includeDescription",
+              "value": "false"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 460],
+      "name": "Apify - Start Job Scraper"
+    },
+    {
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1340, 460],
+      "name": "Wait 60 Seconds"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.apify.com/v2/acts/happitap~linkedin-job-scraper/runs/{{ $('Apify - Start Job Scraper').item.json.data.id }}/dataset/items",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_APIFY_API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 460],
+      "name": "Get Job Listings"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nif (!items || items.length === 0) {\n  return [];\n}\n\nconst companiesMap = new Map();\n\nitems.forEach(item => {\n  const job = item.json;\n  const companyName = job.companyName;\n  \n  if (!companyName) return;\n  \n  if (!companiesMap.has(companyName)) {\n    companiesMap.set(companyName, {\n      company_name: companyName,\n      company_linkedin_url: job.companyUrl || '',\n      jobs: [],\n      job_titles: new Set(),\n      total_jobs: 0,\n      locations: new Set()\n    });\n  }\n  \n  const company = companiesMap.get(companyName);\n  \n  company.jobs.push({\n    title: job.jobTitle,\n    location: job.location,\n    posted: job.postedAt,\n    url: job.jobUrl,\n    remote: job.isRemote || false\n  });\n  \n  company.job_titles.add(job.jobTitle);\n  if (job.location) company.locations.add(job.location);\n  company.total_jobs++;\n});\n\nconst companies = Array.from(companiesMap.values()).map(company => {\n  return {\n    json: {\n      company_name: company.company_name,\n      company_linkedin_url: company.company_linkedin_url,\n      total_jobs: company.total_jobs,\n      job_titles: Array.from(company.job_titles).join(', '),\n      locations: Array.from(company.locations).join(', '),\n      jobs: company.jobs,\n      company_name_clean: company.company_name\n        .replace(/\\s+(Inc\\.|LLC|Ltd\\.|Corporation|Corp\\.|Limited)$/gi, '')\n        .trim()\n    }\n  };\n});\n\ncompanies.sort((a, b) => b.json.total_jobs - a.json.total_jobs);\n\nreturn companies;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 460],
+      "name": "Dedupe Companies"
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [2000, 460],
+      "name": "Loop Each Company"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [2220, 460],
+      "name": "Rate Limit Wait"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_LINKFINDER_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_website"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.company_name_clean }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2440, 460],
+      "name": "LinkFinder AI - Get Website",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_LINKFINDER_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_phone"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('Loop Each Company').item.json.company_name_clean }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2660, 460],
+      "name": "LinkFinder AI - Get Phone",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_LINKFINDER_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_employee_count"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('Loop Each Company').item.json.company_name_clean }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2880, 460],
+      "name": "LinkFinder AI - Get Employee Count",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_LINKFINDER_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_email"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('Loop Each Company').item.json.company_name_clean }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3100, 460],
+      "name": "LinkFinder AI - Get Email",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const companyData = $('Loop Each Company').item.json;\nconst websiteResponse = $('LinkFinder AI - Get Website').item.json;\nconst phoneResponse = $('LinkFinder AI - Get Phone').item.json;\nconst employeeCountResponse = $('LinkFinder AI - Get Employee Count').item.json;\nconst emailResponse = $('LinkFinder AI - Get Email').item.json;\n\nconst website = websiteResponse?.result || '';\nconst phone = phoneResponse?.result || '';\nconst employeeCount = employeeCountResponse?.result || '';\nconst email = emailResponse?.result || '';\n\nreturn {\n  json: {\n    company_name: companyData.company_name,\n    company_website: website,\n    company_phone: phone,\n    company_email: email,\n    employee_count: employeeCount,\n    total_jobs: companyData.total_jobs,\n    job_titles: companyData.job_titles,\n    locations: companyData.locations,\n    linkedin_url: companyData.company_linkedin_url,\n    found_date: new Date().toISOString().split('T')[0],\n    hiring_signal: `Hiring ${companyData.total_jobs} positions`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3320, 460],
+      "name": "Merge Company Data"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Hiring_Intelligence",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Company Name": "={{ $json.company_name }}",
+            "Website": "={{ $json.company_website }}",
+            "Phone": "={{ $json.company_phone }}",
+            "Email": "={{ $json.company_email }}",
+            "Employee Count": "={{ $json.employee_count }}",
+            "Job Titles": "={{ $json.job_titles }}",
+            "Total Jobs": "={{ $json.total_jobs }}",
+            "LinkedIn": "={{ $json.linkedin_url }}",
+            "Found Date": "={{ $json.found_date }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [3540, 460],
+      "name": "Save to Google Sheets"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [3760, 460],
+      "name": "Aggregate Results"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allCompanies = $('Merge Company Data').all();\n\nif (!allCompanies || allCompanies.length === 0) {\n  return {\n    json: {\n      total_companies: 0,\n      message: 'No companies found'\n    }\n  };\n}\n\nconst totalCompanies = allCompanies.length;\nconst totalJobs = allCompanies.reduce((sum, c) => sum + (parseInt(c.json.total_jobs) || 0), 0);\nconst avgJobsPerCompany = (totalJobs / totalCompanies).toFixed(1);\n\nconst topCompanies = allCompanies\n  .sort((a, b) => (b.json.total_jobs || 0) - (a.json.total_jobs || 0))\n  .slice(0, 5)\n  .map(c => ({\n    name: c.json.company_name,\n    jobs: c.json.total_jobs,\n    website: c.json.company_website\n  }));\n\nconst withPhone = allCompanies.filter(c => c.json.company_phone).length;\nconst withEmail = allCompanies.filter(c => c.json.company_email).length;\nconst withWebsite = allCompanies.filter(c => c.json.company_website).length;\n\nreturn {\n  json: {\n    run_date: new Date().toISOString().split('T')[0],\n    search_criteria: $('Set Search Parameters').item.json.job_keywords,\n    search_location: $('Set Search Parameters').item.json.location,\n    total_companies: totalCompanies,\n    total_jobs: totalJobs,\n    avg_jobs_per_company: avgJobsPerCompany,\n    companies_with_phone: withPhone,\n    companies_with_email: withEmail,\n    companies_with_website: withWebsite,\n    data_completeness_pct: Math.round((withWebsite / totalCompanies) * 100),\n    top_5_companies: topCompanies\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3980, 460],
+      "name": "Generate Summary"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Search Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Search Parameters": {
+      "main": [
+        [
+          {
+            "node": "Apify - Start Job Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify - Start Job Scraper": {
+      "main": [
+        [
+          {
+            "node": "Wait 60 Seconds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 60 Seconds": {
+      "main": [
+        [
+          {
+            "node": "Get Job Listings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Job Listings": {
+      "main": [
+        [
+          {
+            "node": "Dedupe Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dedupe Companies": {
+      "main": [
+        [
+          {
+            "node": "Loop Each Company",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Each Company": {
+      "main": [
+        [
+          {
+            "node": "Rate Limit Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rate Limit Wait": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get Website": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get Phone": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get Employee Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get Employee Count": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get Email": {
+      "main": [
+        [
+          {
+            "node": "Merge Company Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Company Data": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Loop Each Company",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Results": {
+      "main": [
+        [
+          {
+            "node": "Generate Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}
