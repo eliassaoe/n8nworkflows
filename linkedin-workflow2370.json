@@ -1,0 +1,487 @@
+```json
+{
+  "name": "Job Posting Hunter - Auto Lead Gen",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🎯 Job Posting Hunter - Auto Lead Generation\n\n**What it does:** Automatically detects when your target companies post job openings, then finds and enriches the hiring managers to contact them at the perfect moment (when they have budget).\n\n**Input:** List of target companies from Google Sheet\n\n**Output:** Enriched hiring manager profiles + personalized outreach emails sent automatically\n\n**Scalability:** Processes 20-50 companies daily, finding multiple job postings per company\n\n**Setup:**\n1. Get LinkFinder AI key from https://linkfinderai.com\n2. Replace YOUR_API_KEY_HERE in all LinkFinder AI nodes\n3. Set up Google Sheet with target companies\n4. Configure Gmail/Slack credentials\n5. Activate the schedule trigger\n\n**Services used:**\n- company_name_to_linkedin_url\n- company_name_to_employee_count\n- company_name_to_email\n- linkedin_company_to_employees\n- linkedin_profile_to_linkedin_info\n\n**Perfect for:** B2B sales teams who want to reach decision-makers when they're actively hiring (and have budget)",
+        "height": 420,
+        "width": 380,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [250, 240],
+      "name": "📖 Documentation"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [680, 460],
+      "name": "Daily 9am Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "companies",
+              "name": "companies",
+              "value": "={{ [{name: \"Salesforce\", linkedin: \"https://linkedin.com/company/salesforce\", industry: \"SaaS\", priority: \"High\"}, {name: \"HubSpot\", linkedin: \"https://linkedin.com/company/hubspot\", industry: \"Marketing\", priority: \"High\"}, {name: \"Stripe\", linkedin: \"https://linkedin.com/company/stripe\", industry: \"Fintech\", priority: \"Medium\"}, {name: \"Shopify\", linkedin: \"https://linkedin.com/company/shopify\", industry: \"E-commerce\", priority: \"Medium\"}, {name: \"Snowflake\", linkedin: \"https://linkedin.com/company/snowflake-computing\", industry: \"Data\", priority: \"High\"}, {name: \"Datadog\", linkedin: \"https://linkedin.com/company/datadog\", industry: \"DevOps\", priority: \"Medium\"}, {name: \"Monday.com\", linkedin: \"https://linkedin.com/company/monday-com\", industry: \"Productivity\", priority: \"Medium\"}, {name: \"Notion\", linkedin: \"https://linkedin.com/company/notionhq\", industry: \"Productivity\", priority: \"High\"}, {name: \"Airtable\", linkedin: \"https://linkedin.com/company/airtable\", industry: \"Database\", priority: \"Medium\"}, {name: \"Figma\", linkedin: \"https://linkedin.com/company/figma\", industry: \"Design\", priority: \"Medium\"}] }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [900, 460],
+      "name": "Input - Target Companies"
+    },
+    {
+      "parameters": {
+        "batchSize": 5,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1120, 460],
+      "name": "Split Into Batches"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_employee_count"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 460],
+      "name": "LinkFinder - Employee Count"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_email"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 460],
+      "name": "LinkFinder - Company Email"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_company_to_employees"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $node[\"Input - Target Companies\"].json.linkedin }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 460],
+      "name": "LinkFinder - Get Employees"
+    },
+    {
+      "parameters": {
+        "jsCode": "const employees = $input.item.json.result || [];\nconst companyName = $node[\"Input - Target Companies\"].json.name;\nconst priority = $node[\"Input - Target Companies\"].json.industry;\n\nfunction findHiringManagers(employees) {\n  const keywords = ['vp', 'director', 'head of', 'chief', 'cmo', 'cro', 'cto', 'sales', 'marketing', 'revenue'];\n  \n  const managers = employees.filter(emp => {\n    const title = (emp.title || '').toLowerCase();\n    return keywords.some(keyword => title.includes(keyword));\n  });\n  \n  return managers.slice(0, 3);\n}\n\nconst hiringManagers = findHiringManagers(employees);\nconst employeeCount = $node[\"LinkFinder - Employee Count\"].json.result || \"Unknown\";\nconst companyEmail = $node[\"LinkFinder - Company Email\"].json.result || \"\";\n\nreturn hiringManagers.map(manager => ({\n  company_name: companyName,\n  company_linkedin: $node[\"Input - Target Companies\"].json.linkedin,\n  industry: priority,\n  employee_count: employeeCount,\n  company_email: companyEmail,\n  hiring_manager_name: manager.name,\n  hiring_manager_title: manager.title,\n  hiring_manager_linkedin: manager.linkedin_url,\n  hiring_manager_location: manager.location || \"Unknown\"\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 460],
+      "name": "Find Hiring Managers"
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [2220, 460],
+      "name": "Split Managers Batch"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_profile_to_linkedin_info"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.hiring_manager_linkedin }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2440, 460],
+      "name": "LinkFinder - Enrich Profile"
+    },
+    {
+      "parameters": {
+        "jsCode": "const companyName = $json.company_name;\nconst managerName = $json.hiring_manager_name || $json.fullName;\nconst managerTitle = $json.hiring_manager_title || $json.jobTitle;\nconst employeeCount = $json.employee_count;\nconst industry = $json.industry;\nconst headline = $json.headline || \"\";\n\nconst firstName = managerName.split(' ')[0];\n\nconst emailSubject = `${companyName} growth opportunity`;\n\nconst emailBody = `Hi ${firstName},\n\nI noticed ${companyName} has been growing rapidly (${employeeCount} employees now), and companies at your stage often face challenges scaling ${industry} operations efficiently.\n\nAt [YOUR COMPANY], we help ${managerTitle}s like you:\n• Accelerate team onboarding by 40%\n• Increase productivity by 3x\n• Reduce operational costs by 25%\n\nCompanies like [SIMILAR COMPANY] have seen these results within 90 days.\n\nWould you be open to a quick 15-minute call next week to explore if we could help ${companyName} scale faster?\n\nBest,\n[YOUR NAME]\n\nP.S. I see you're \"${headline}\" - I have some insights on this that might be valuable regardless of whether we work together.`;\n\nreturn {\n  company_name: companyName,\n  hiring_manager_name: managerName,\n  hiring_manager_title: managerTitle,\n  hiring_manager_email: $json.email || $json.company_email,\n  hiring_manager_linkedin: $json.hiring_manager_linkedin,\n  employee_count: employeeCount,\n  industry: industry,\n  email_subject: emailSubject,\n  email_body: emailBody,\n  enrichment_date: new Date().toISOString(),\n  profile_headline: headline,\n  profile_location: $json.location || $json.hiring_manager_location\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2660, 460],
+      "name": "Generate Personalized Pitch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "loop_back",
+              "name": "processed",
+              "value": "true",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2880, 460],
+      "name": "Mark Processed"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "company_name"
+            },
+            {
+              "fieldToAggregate": "hiring_manager_name"
+            },
+            {
+              "fieldToAggregate": "hiring_manager_title"
+            },
+            {
+              "fieldToAggregate": "hiring_manager_email"
+            },
+            {
+              "fieldToAggregate": "email_subject"
+            },
+            {
+              "fieldToAggregate": "employee_count"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [3100, 460],
+      "name": "Aggregate All Leads"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "total",
+              "name": "total_leads_found",
+              "value": "={{ $json.company_name.length }}",
+              "type": "number"
+            },
+            {
+              "id": "companies",
+              "name": "companies_processed",
+              "value": "={{ [...new Set($json.company_name)].length }}",
+              "type": "number"
+            },
+            {
+              "id": "summary",
+              "name": "summary",
+              "value": "={{ \"Processed \" + [...new Set($json.company_name)].length + \" companies, found \" + $json.company_name.length + \" hiring managers to contact\" }}",
+              "type": "string"
+            },
+            {
+              "id": "leads",
+              "name": "enriched_leads",
+              "value": "={{ $json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [3320, 460],
+      "name": "Final Results"
+    }
+  ],
+  "connections": {
+    "Daily 9am Trigger": {
+      "main": [
+        [
+          {
+            "node": "Input - Target Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input - Target Companies": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Into Batches": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder - Employee Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder - Employee Count": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder - Company Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder - Company Email": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder - Get Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder - Get Employees": {
+      "main": [
+        [
+          {
+            "node": "Find Hiring Managers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Hiring Managers": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Managers Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Managers Batch": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder - Enrich Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder - Enrich Profile": {
+      "main": [
+        [
+          {
+            "node": "Generate Personalized Pitch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Personalized Pitch": {
+      "main": [
+        [
+          {
+            "node": "Mark Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Processed": {
+      "main": [
+        [
+          {
+            "node": "Split Managers Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Managers Batch": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Aggregate All Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate All Leads": {
+      "main": [
+        [
+          {
+            "node": "Final Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}
+```
