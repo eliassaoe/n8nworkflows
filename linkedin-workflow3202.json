@@ -1,5 +1,5 @@
 {
-  "name": "Backlink linkfinder AI",
+  "name": "Backlink outbound automated",
   "nodes": [
     {
       "parameters": {
@@ -9,10 +9,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1360,
-        -32
+        1936,
+        96
       ],
-      "id": "c934f53c-9b34-4eed-b7a7-078a324afd94",
+      "id": "80cd795a-c0da-4780-b759-1e566f189ea4",
       "name": "Code"
     },
     {
@@ -23,10 +23,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2656,
-        336
+        640,
+        464
       ],
-      "id": "6cd3e7a8-c26b-4672-93d5-62eb866ec884",
+      "id": "43f369ee-0a97-4b86-b130-93730efe78e4",
       "name": "Code5",
       "alwaysOutputData": true,
       "onError": "continueRegularOutput"
@@ -59,10 +59,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -2240,
-        336
+        1056,
+        464
       ],
-      "id": "2575023a-b557-4edf-a7e8-fe5093509955",
+      "id": "72209d2d-09a0-4d61-9325-e2f18a297f44",
       "name": "If",
       "alwaysOutputData": true
     },
@@ -98,10 +98,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1024,
-        304
+        2272,
+        432
       ],
-      "id": "edd057bb-a58c-440a-8622-85c28f2424a7",
+      "id": "10883967-4cc2-445b-af90-dcf2866ea57a",
       "name": "HTTP Request",
       "onError": "continueRegularOutput"
     },
@@ -133,10 +133,10 @@
       "type": "n8n-nodes-base.googleSheetsTrigger",
       "typeVersion": 1,
       "position": [
-        -2752,
-        -32
+        544,
+        96
       ],
-      "id": "310c80b2-298d-457d-8f7c-34cbba3db4c6",
+      "id": "4ac3c0ae-b985-496c-b183-a82a06795db7",
       "name": "Google Sheets Trigger",
       "credentials": {
         "googleSheetsTriggerOAuth2Api": {
@@ -163,10 +163,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -2032,
-        -32
+        1264,
+        96
       ],
-      "id": "8da3c55a-4da1-410c-aaad-8e39dcb18a03",
+      "id": "21492d45-45e6-48fb-bd18-32ca7c90830a",
       "name": "HTTP Request36",
       "onError": "continueRegularOutput"
     },
@@ -208,10 +208,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1024,
-        -32
+        2272,
+        96
       ],
-      "id": "cb303143-c66c-47b2-b2d3-64312b16e900",
+      "id": "ca82bae3-2c54-4f7b-80aa-248d977dada9",
       "name": "HTTP Request37",
       "onError": "continueRegularOutput"
     },
@@ -223,10 +223,10 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        -1696,
-        -32
+        1600,
+        96
       ],
-      "id": "9a8fca7d-9c92-420d-a72d-e9a245e0cfe3",
+      "id": "aedd7104-09ce-4a43-b1d7-49f6fa9d1248",
       "name": "Split Out"
     },
     {
@@ -241,10 +241,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -1536,
-        320
+        1760,
+        448
       ],
-      "id": "a38f3473-7d6e-4875-84a1-ae4a68acc299",
+      "id": "ee782e2d-a071-4154-aa8c-dee7a8775f4a",
       "name": "HTTP Request1",
       "alwaysOutputData": true
     },
@@ -275,10 +275,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -1296,
-        320
+        2000,
+        448
       ],
-      "id": "2b53cba4-b100-4fe7-bf42-312f490faf0c",
+      "id": "c9b43eeb-8fcc-48c2-b30a-cf024dcf53fa",
       "name": "If1",
       "executeOnce": false,
       "alwaysOutputData": true
@@ -290,10 +290,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1856,
-        320
+        1440,
+        448
       ],
-      "id": "1e3c7122-9333-4d55-9798-868f420f2f94",
+      "id": "027cb38a-a4c1-443b-9b8c-39ad826e5785",
       "name": "Code in JavaScript",
       "alwaysOutputData": true
     },
@@ -305,10 +305,10 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        -2432,
-        -32
+        864,
+        96
       ],
-      "id": "36c7b5a8-3422-48c4-83b9-eb511d52b709",
+      "id": "fa47bc81-33b8-49a3-bdfb-dbf9c96ff661",
       "name": "Loop Over Items"
     },
     {
@@ -321,11 +321,71 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -3296,
-        -128
+        0,
+        0
       ],
       "name": "📖 Documentation",
-      "id": "663110eb-ad96-4b9a-b95b-e06e42f87aac"
+      "id": "0f7b6835-ffc1-49a2-9333-8ff54a1c0b03"
+    },
+    {
+      "parameters": {
+        "content": "**Setup:**\n\nGet API key from https://apify.com\n\nReplace API key in the url of this node\n  \n\n",
+        "height": 132,
+        "width": 380
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        -64
+      ],
+      "name": "📖 Documentation1",
+      "id": "40d4cac6-2ed3-4a60-8e49-021da1fa4646"
+    },
+    {
+      "parameters": {
+        "content": "**Setup:**\n\nGet API key from https://linkfinderai.com\n\nReplace API key in the Authorization header of this node\n  \n\n",
+        "height": 148,
+        "width": 380
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2128,
+        -80
+      ],
+      "name": "📖 Documentation2",
+      "id": "21265555-b6d0-4be3-b22a-7edbda2b8962"
+    },
+    {
+      "parameters": {
+        "content": "**Setup:**\n\nGet API key from https://instantly.ai/fr\n\nReplace API key in the Authorization header of this node\n  \nADD CAMPAIGN ID IN THE BODY \n\n",
+        "height": 164,
+        "width": 380
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2128,
+        640
+      ],
+      "name": "📖 Documentation3",
+      "id": "ba81335a-f394-4042-b0c8-ca4124d63185"
+    },
+    {
+      "parameters": {
+        "content": "**Setup:**\n\nGet API key from https://apify.com\n\nReplace API key in the url of this node\n  \n\n",
+        "height": 148,
+        "width": 380
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        640
+      ],
+      "name": "📖 Documentation4",
+      "id": "e49bee2c-94ad-44a1-9efa-02d50f119485"
     }
   ],
   "pinData": {},
@@ -437,8 +497,7 @@
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Code in JavaScript": {
@@ -465,18 +524,14 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
-    "executionOrder": "v1",
-    "callerPolicy": "workflowsFromSameOwner",
-    "executionTimeout": -1,
-    "availableInMCP": false
+    "executionOrder": "v1"
   },
-  "versionId": "8d835fdd-8204-4cae-959c-3bf95f941473",
+  "versionId": "bcbd5a6b-3adf-4ce1-b5f8-d69277ebc129",
   "meta": {
-    "templateCredsSetupCompleted": true,
     "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
   },
-  "id": "KCJfbtDHeyz92opu",
+  "id": "DYibkVsvVQ9m0Zsx",
   "tags": []
 }
