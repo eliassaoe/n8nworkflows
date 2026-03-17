@@ -1,0 +1,192 @@
+{
+  "name": "LinkFinder AI — Domain → All Employees",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🔑 API Key Setup\n\nFind your API key in the **API Access** section of your [linkfinderai.com](https://linkfinderai.com) account.\n\nThen replace `{{Insert-api-key}}` in every **Linkfinder** node with your actual key.",
+        "height": 192,
+        "width": 340
+      },
+      "id": "7700140b-0456-4b98-b4a7-827becbb46cf",
+      "name": "📌 API Key",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        688,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "path": "4d7fa948-fe42-4ed1-93cc-5ca0ef618f1e",
+        "formTitle": "Employee List Extractor",
+        "formDescription": "Extract all employees from a list of company domains.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Domains",
+              "fieldType": "textarea",
+              "placeholder": "tesla.com\nstripe.com\nnotion.so",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Max results per domain",
+              "fieldType": "number",
+              "placeholder": "50"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d7376f94-df78-4fe7-9aca-342db004b478",
+      "name": "On Form Submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2,
+      "position": [
+        112,
+        224
+      ],
+      "webhookId": "4d7fa948-fe42-4ed1-93cc-5ca0ef618f1e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw      = $input.first().json['Domains'] || '';\nconst maxCount = parseInt($input.first().json['Max results per domain'] || '50');\n\nreturn raw.split('\\n').map(d => d.trim()).filter(d => d)\n  .map(domain => ({ json: { domain, employee_count: maxCount } }));"
+      },
+      "id": "dd041aa5-b400-4d19-bf12-f3534747a2af",
+      "name": "Split into Individual Domains",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e1e4d5f6-c664-4f27-b034-fdc5c5e7efde",
+      "name": "One Domain at a Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        560,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 7bZ37Z54Z7aZ4aZ6cZ5aZ5fZ70Z81Z3dZ76Z3cZ75Z70Z49"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"type\": \"company_domain_to_employees\",\n  \"input_data\": \"{{ $json.domain }}\",\n  \"employee_count\": {{ $json.employee_count }}\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "fdaf2420-4f5d-4f83-9d2c-b68750dc17dc",
+      "name": "Linkfinder — Get All Employees",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        832,
+        224
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "1f3a88de-f2d0-40f7-99b7-3d73b61956a1",
+      "name": "→ Connect Your CRM Here",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        224
+      ],
+      "notes": "📤 Connect your destination here:\n• HubSpot → 'Create/Update Contact'\n• Pipedrive → 'Create Person'\n• Salesforce → 'Create Record'\n• Airtable, Notion, HTTP webhook..."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On Form Submission": {
+      "main": [
+        [
+          {
+            "node": "Split into Individual Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split into Individual Domains": {
+      "main": [
+        [
+          {
+            "node": "One Domain at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One Domain at a Time": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Linkfinder — Get All Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkfinder — Get All Employees": {
+      "main": [
+        [
+          {
+            "node": "→ Connect Your CRM Here",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "→ Connect Your CRM Here": {
+      "main": [
+        [
+          {
+            "node": "One Domain at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0f324ee6-682d-47e6-a779-f9d816e1ec35",
+  "meta": {
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "id": "QvKkPUVv002mzU9m",
+  "tags": []
+}
