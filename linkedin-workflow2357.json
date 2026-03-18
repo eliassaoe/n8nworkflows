@@ -1,0 +1,187 @@
+{
+  "name": "LinkFinder AI — LinkedIn Company Pages → Full Scrape",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🔑 API Key Setup\n\nFind your API key in the **API Access** section of your [linkfinderai.com](https://linkfinderai.com) account.\n\nThen replace `{{Insert-api-key}}` in every **Linkfinder** node with your actual key.",
+        "height": 192,
+        "width": 340
+      },
+      "id": "0f537a18-f4b5-4ffd-a69b-cfc569e20834",
+      "name": "📌 API Key",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        592,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "path": "0bd24cb4-4db8-4b7d-bab9-7d90ae9dcca1",
+        "formTitle": "LinkedIn Company Scraper",
+        "formDescription": "Scrape full data from LinkedIn company pages.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "LinkedIn Company URLs",
+              "fieldType": "textarea",
+              "placeholder": "https://linkedin.com/company/tesla\nhttps://linkedin.com/company/stripe",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c5cc653d-f13c-44a0-af0c-575a8de2d816",
+      "name": "On Form Submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2,
+      "position": [
+        0,
+        240
+      ],
+      "webhookId": "0bd24cb4-4db8-4b7d-bab9-7d90ae9dcca1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json['LinkedIn Company URLs'] || '';\nreturn raw.split('\\n').map(u => u.trim()).filter(u => u)\n  .map(linkedin_url => ({ json: { linkedin_url } }));"
+      },
+      "id": "0b7f5fb5-e4b2-4898-b6fa-ef11605f77e1",
+      "name": "Split into Individual URLs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "87cc242b-f0b8-43f1-a4b4-f93ca02c7ec0",
+      "name": "One URL at a Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        448,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{Insert-api-key}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"type\": \"linkedin_company_to_linkedin_info\",\n  \"input_data\": \"{{ $json.linkedin_url }}\"\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "e4b11385-b1c8-4091-ae83-8c6a334c8af8",
+      "name": "Linkfinder — Scrape Company",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        736,
+        240
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "21bd32ac-1198-411f-928d-0884c1a28cf6",
+      "name": "→ Connect Your CRM Here",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        240
+      ],
+      "notes": "📤 Connect your destination here:\n• HubSpot → 'Create/Update Company'\n• Pipedrive → 'Create Organization'\n• Salesforce → 'Create Account'\n• Airtable, Notion, HTTP webhook..."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On Form Submission": {
+      "main": [
+        [
+          {
+            "node": "Split into Individual URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split into Individual URLs": {
+      "main": [
+        [
+          {
+            "node": "One URL at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One URL at a Time": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Linkfinder — Scrape Company",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkfinder — Scrape Company": {
+      "main": [
+        [
+          {
+            "node": "→ Connect Your CRM Here",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "→ Connect Your CRM Here": {
+      "main": [
+        [
+          {
+            "node": "One URL at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a22100aa-cf39-42ac-98c9-f811635c555d",
+  "meta": {
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "id": "NLu1gy2h2PentURk",
+  "tags": []
+}
