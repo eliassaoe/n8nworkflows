@@ -1,0 +1,187 @@
+{
+  "name": "LinkFinder AI — LinkedIn Profiles → Full Scrape",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🔑 API Key Setup\n\nFind your API key in the **API Access** section of your [linkfinderai.com](https://linkfinderai.com) account.\n\nThen replace `{{Insert-api-key}}` in every **Linkfinder** node with your actual key.",
+        "height": 192,
+        "width": 340
+      },
+      "id": "7170219f-be77-416f-8558-37eebc5409fd",
+      "name": "📌 API Key",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        656,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "path": "3e791233-27b1-47bf-82b7-22a8e75fffeb",
+        "formTitle": "LinkedIn Profile Scraper",
+        "formDescription": "Extract full data from LinkedIn profiles — email, mobile, experience, connections and more.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "LinkedIn Profile URLs",
+              "fieldType": "textarea",
+              "placeholder": "https://linkedin.com/in/bill-gates\nhttps://linkedin.com/in/elon-musk",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b9a3bc37-74bd-474e-90c6-57bd0c3b5ceb",
+      "name": "On Form Submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2,
+      "position": [
+        0,
+        224
+      ],
+      "webhookId": "3e791233-27b1-47bf-82b7-22a8e75fffeb"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json['LinkedIn Profile URLs'] || '';\nreturn raw.split('\\n').map(u => u.trim()).filter(u => u)\n  .map(linkedin_url => ({ json: { linkedin_url } }));"
+      },
+      "id": "8f5752a6-1ec3-4af2-8819-32002a9bccac",
+      "name": "Split into Individual Profiles",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "174ce10d-a632-4aea-a58c-ce530a722641",
+      "name": "One Profile at a Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        448,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 7bZ37Z54Z7aZ4aZ6cZ5aZ5fZ70Z81Z3dZ76Z3cZ75Z70Z49"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"type\": \"linkedin_profile_to_linkedin_info\",\n  \"input_data\": \"{{ $json.linkedin_url }}\"\n}",
+        "options": {}
+      },
+      "id": "2587606c-f316-43f1-8251-18fe97e16178",
+      "name": "Linkfinder — Scrape Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        784,
+        224
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "8dcacde9-0b38-4dc6-ba1d-43840a33c2bd",
+      "name": "→ Connect Your CRM Here",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        224
+      ],
+      "notes": "📤 Connect your destination here:\n• HubSpot → 'Create/Update Contact'\n• Pipedrive → 'Create Person'\n• Salesforce → 'Create Record'\n• Airtable, Notion, HTTP webhook..."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On Form Submission": {
+      "main": [
+        [
+          {
+            "node": "Split into Individual Profiles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split into Individual Profiles": {
+      "main": [
+        [
+          {
+            "node": "One Profile at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One Profile at a Time": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Linkfinder — Scrape Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkfinder — Scrape Profile": {
+      "main": [
+        [
+          {
+            "node": "→ Connect Your CRM Here",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "→ Connect Your CRM Here": {
+      "main": [
+        [
+          {
+            "node": "One Profile at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ac21f439-5b66-4058-b012-996052438e39",
+  "meta": {
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "id": "MbhlJU6tYI0MaCgQ",
+  "tags": []
+}
