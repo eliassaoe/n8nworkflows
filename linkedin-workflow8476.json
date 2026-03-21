@@ -1,0 +1,577 @@
+{
+  "name": "LinkFinder AI — Company Name → Full Enrichment",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🔑 API Key Setup\n\nFind your API key in the **API Access** section of your [linkfinderai.com](https://linkfinderai.com) account.\n\nThen replace `{{Insert-api-key}}` in every **Linkfinder** node with your actual key.",
+        "height": 224,
+        "width": 340
+      },
+      "id": "a3063cd1-28cb-4d9e-b3f1-2c6173940fab",
+      "name": "📌 API Key",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "path": "15bfa940-b0aa-400a-9e14-2b4fed799ba8",
+        "formTitle": "Company Enrichment",
+        "formDescription": "Enrich company names with website, email, phone, LinkedIn URL and headcount.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Company Names",
+              "fieldType": "textarea",
+              "placeholder": "Tesla\nStripe\nNotion",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e94dc616-f4ab-407e-b279-bda79abd58f6",
+      "name": "On Form Submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2,
+      "position": [
+        -592,
+        240
+      ],
+      "webhookId": "15bfa940-b0aa-400a-9e14-2b4fed799ba8"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json['Company Names'] || '';\nreturn raw.split('\\n').map(c => c.trim()).filter(c => c)\n  .map(company_name => ({ json: { company_name } }));"
+      },
+      "id": "8d88b3af-086f-4227-a2ad-e6a4f67826fe",
+      "name": "Split into Individual Companies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7f2282dd-e884-41b8-ba44-4766fe19d91d",
+      "name": "One Company at a Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -144,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{Insert-api-key}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"type\": \"company_name_to_website\", \"input_data\": \"{{ $json.company_name }}\" }",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "445a8ee1-ba9a-4ac9-a081-58105961f921",
+      "name": "Linkfinder — Get Website",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        400,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{Insert-api-key}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"type\": \"company_name_to_email\", \"input_data\": \"{{ $('One Company at a Time').first().json.company_name }}\" }",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "8d981737-9e35-49b0-8bf1-4e6d327b10a3",
+      "name": "Linkfinder — Get Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        400,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 7bZ37Z54Z7aZ4aZ6cZ5aZ5fZ70Z81Z3dZ76Z3cZ75Z70Z49"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"type\": \"company_name_to_phone\", \"input_data\": \"{{ $('One Company at a Time').first().json.company_name }}\" }",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "f4f1ea04-d491-4448-b465-402cb0573fc9",
+      "name": "Linkfinder — Get Phone",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        384,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 7bZ37Z54Z7aZ4aZ6cZ5aZ5fZ70Z81Z3dZ76Z3cZ75Z70Z49"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"type\": \"company_name_to_linkedin_url\", \"input_data\": \"{{ $('One Company at a Time').first().json.company_name }}\" }",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "d829972e-9ebd-4ae8-a4a9-9c4153d2a971",
+      "name": "Linkfinder — Get LinkedIn URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        368,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 7bZ37Z54Z7aZ4aZ6cZ5aZ5fZ70Z81Z3dZ76Z3cZ75Z70Z49"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"type\": \"company_name_to_employee_count\", \"input_data\": \"{{ $('One Company at a Time').first().json.company_name }}\" }",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "e74ea9d2-c65a-4f2a-afcd-693a9dffc7ab",
+      "name": "Linkfinder — Get Headcount",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        368,
+        640
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "4a062e06-1a0a-485e-bd16-c4132de487b0",
+      "name": "→ Connect Your CRM Here",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        112
+      ],
+      "notes": "📤 Connect your destination here:\n• HubSpot → 'Create/Update Company'\n• Pipedrive → 'Create Organization'\n• Salesforce → 'Create Account'\n• Airtable, Notion, HTTP webhook..."
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        976,
+        64
+      ],
+      "id": "b9fef7e7-7e26-49a8-8dc1-c5161a8f1ada",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8c9c2f70-2aad-4a69-b3f1-8182331895c1",
+              "name": "website",
+              "value": "={{ $json.result }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        608,
+        -352
+      ],
+      "id": "c1b5969c-c300-40c2-9404-2bb4244cd095",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8c9c2f70-2aad-4a69-b3f1-8182331895c1",
+              "name": "email",
+              "value": "={{ $json.result }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        608,
+        -128
+      ],
+      "id": "82c3e5d4-b916-4c7d-a827-1c9b1c55554d",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8c9c2f70-2aad-4a69-b3f1-8182331895c1",
+              "name": "phone",
+              "value": "={{ $json.result }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        608,
+        128
+      ],
+      "id": "777f5050-d6e0-4fd8-ade0-56bcf043103b",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8c9c2f70-2aad-4a69-b3f1-8182331895c1",
+              "name": "linkedin",
+              "value": "={{ $json.result }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        608,
+        400
+      ],
+      "id": "e98e2565-6a9e-4b34-98c9-fdfdd2b607c4",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8c9c2f70-2aad-4a69-b3f1-8182331895c1",
+              "name": "company_size",
+              "value": "={{ $json.result }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        592,
+        640
+      ],
+      "id": "d22a53d9-684e-46bb-916a-594dc73cb196",
+      "name": "Edit Fields4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On Form Submission": {
+      "main": [
+        [
+          {
+            "node": "Split into Individual Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split into Individual Companies": {
+      "main": [
+        [
+          {
+            "node": "One Company at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One Company at a Time": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Linkfinder — Get Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Linkfinder — Get Website",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Linkfinder — Get Phone",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Linkfinder — Get LinkedIn URL",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Linkfinder — Get Headcount",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkfinder — Get Website": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "→ Connect Your CRM Here": {
+      "main": [
+        [
+          {
+            "node": "One Company at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkfinder — Get Email": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkfinder — Get Phone": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkfinder — Get LinkedIn URL": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkfinder — Get Headcount": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "→ Connect Your CRM Here",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Edit Fields4": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bba96608-3d66-400e-a60c-3deb96ec833f",
+  "meta": {
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "id": "BMtwlVskGc5KOnDz",
+  "tags": []
+}
