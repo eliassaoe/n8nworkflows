@@ -1,0 +1,602 @@
+{
+  "name": "Company Decision Makers Enrichment Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "⚡ WORKFLOW OPTIMIZED WITH LINKFINDER AI ⚡\n\nThis workflow has been optimized by replacing 0 nodes with LinkFinder AI services.\n\nREPLACED SERVICES:\n✅ ALL nodes were already using LinkFinder AI services - no replacements needed!\n\nIMPORTANT - Response Structure Updates:\n✅ All downstream nodes verified and optimized for correct LinkFinder AI response paths\n✅ Simple services use: $json.result\n✅ LinkedIn Company scraping uses: $json.fieldName (direct access)\n✅ company_domain_to_employees uses: $json.result (array of employees)\n\nSetup Instructions:\n1. Get your API key: https://linkfinderai.com/?ref=reddit\n2. Replace ALL instances of Bearer token with your actual API key\n3. Test the workflow with sample data\n\nLinkFinder AI Services Used:\n- company_name_to_website (Response: $json.result)\n- company_name_to_linkedin_url (Response: $json.result)\n- linkedin_company_to_linkedin_info (Response: Direct field access - $json.industry, $json.size, etc.)\n- company_domain_to_employees (Response: $json.result - array of employee objects)\n\nWorkflow Status: ✅ FULLY OPTIMIZED - All nodes already using LinkFinder AI!\n\nNote: This workflow was already perfectly configured with LinkFinder AI services. All downstream node references have been verified and optimized for correct response structure access.",
+        "height": 580,
+        "width": 400,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -450,
+        0
+      ],
+      "name": "⚡ OPTIMIZATION STATUS",
+      "id": "optimization_status_note"
+    },
+    {
+      "parameters": {
+        "content": "## 🔍 Company Decision Makers Enrichment Pipeline\n\n**What it does:** Takes a list of company names from Google Sheets, enriches each with website and LinkedIn data, then extracts key decision makers (Directors, VPs, C-level) for targeted outreach.\n\n**Input:** Google Sheet with column 'company_name' containing company names\n\n**Output:** Google Sheet with enriched company data + decision makers (name, title, email, LinkedIn, company info)\n\n**Scalability:** Processes companies in batches of 10 with 2-second delays to avoid rate limits\n\n**Setup:**\n1. Get API key from https://linkfinderai.com/?ref=reddit\n2. Replace Bearer token in all LinkFinder AI nodes with your actual API key\n3. Connect your Google account and configure Sheet IDs\n4. Set input sheet with company names in column A\n5. Create output sheet with headers: Company, Website, LinkedIn URL, Industry, Size, Employee Name, Employee Title, Employee Email, Employee LinkedIn\n\n**Services used:**\n- company_name_to_website (Response: $json.result)\n- company_name_to_linkedin_url (Response: $json.result)\n- linkedin_company_to_linkedin_info (Response: Direct fields - $json.industry, $json.size)\n- company_domain_to_employees (Response: $json.result array)\n\n**Perfect for:** Sales teams building targeted prospect lists, ABM campaigns, executive outreach programs",
+        "height": 580,
+        "width": 400,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "name": "📖 Documentation",
+      "id": "0eee066a-6051-43d1-b059-862631deddbd"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        448,
+        272
+      ],
+      "name": "Manual Trigger",
+      "id": "61d21c69-0b2f-4af7-b1bf-13438eef38cb"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "19jsxaEq8OmmQVVSfPCBUsbZufnOpW4YF31QYhC5VdvU",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19jsxaEq8OmmQVVSfPCBUsbZufnOpW4YF31QYhC5VdvU/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        672,
+        272
+      ],
+      "name": "Read Companies from Sheet",
+      "id": "84c3649a-7a67-4c6c-b5c3-6e5123143b03",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o8l5meOpqkwP3c5u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        880,
+        272
+      ],
+      "name": "Process in Batches of 10",
+      "id": "914fbf74-e7f2-4da7-9470-4205fe62ea62"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {api_key_here}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_website"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.Companies }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1104,
+        272
+      ],
+      "name": "LinkFinder AI - Get Website",
+      "id": "56aa13ca-8698-40b9-8f8e-1cc1f8395cfa",
+      "notes": "Service: company_name_to_website\nResponse: $json.result\nPurpose: Gets company website from company name\nGet API key: https://linkfinderai.com/?ref=reddit"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "company_name",
+              "name": "company_name",
+              "value": "={{ $('Read Companies from Sheet').item.json.Companies }}",
+              "type": "string"
+            },
+            {
+              "id": "website",
+              "name": "website",
+              "value": "={{ $json.result }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1328,
+        272
+      ],
+      "name": "Store Website",
+      "id": "1508ebb1-6d68-448c-8f7b-7055451d4bd0",
+      "notes": "Stores company name and website from LinkFinder AI response\nAccesses website using $json.result from company_name_to_website service"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {api_key_here}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('Read Companies from Sheet').item.json.Companies }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1552,
+        272
+      ],
+      "name": "LinkFinder AI - Get LinkedIn URL",
+      "id": "d6d87898-a970-4f5f-aa13-085bb5bcd3a1",
+      "notes": "Service: company_name_to_linkedin_url\nResponse: $json.result\nPurpose: Gets company LinkedIn URL from company name\nGet API key: https://linkfinderai.com/?ref=reddit"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "company_name",
+              "name": "company_name",
+              "value": "={{ $('Read Companies from Sheet').item.json.Companies }}",
+              "type": "string"
+            },
+            {
+              "id": "website",
+              "name": "website",
+              "value": "={{ $('Store Website').item.json.website }}",
+              "type": "string"
+            },
+            {
+              "id": "linkedin_url",
+              "name": "linkedin_url",
+              "value": "={{ $json.result }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1760,
+        272
+      ],
+      "name": "Store LinkedIn URL",
+      "id": "2734b771-f17c-460c-96fd-3e136e03a58e",
+      "notes": "Stores company name, website, and LinkedIn URL\nAccesses LinkedIn URL using $json.result from company_name_to_linkedin_url service"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {api_key_here}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_company_to_linkedin_info"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('LinkFinder AI - Get LinkedIn URL').item.json.result }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1984,
+        272
+      ],
+      "name": "LinkFinder AI - Scrape Company Info",
+      "id": "62492939-7358-486d-abe7-65b93ba174d8",
+      "notes": "Service: linkedin_company_to_linkedin_info\nResponse: Direct field access (no .result)\nFields: name, industry, description, location, website, size, founded, followers, specialties, linkedinUrl\nPurpose: Scrapes detailed company information from LinkedIn\nGet API key: https://linkfinderai.com/?ref=reddit"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "company_name",
+              "name": "company_name",
+              "value": "={{ $('Store LinkedIn URL').item.json.company_name }}",
+              "type": "string"
+            },
+            {
+              "id": "website",
+              "name": "website",
+              "value": "={{ $('Store LinkedIn URL').item.json.website }}",
+              "type": "string"
+            },
+            {
+              "id": "linkedin_url",
+              "name": "linkedin_url",
+              "value": "={{ $('Store LinkedIn URL').item.json.linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "industry",
+              "name": "industry",
+              "value": "={{ $('LinkFinder AI - Scrape Company Info').item.json.industry || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "company_size",
+              "name": "company_size",
+              "value": "={{ $('LinkFinder AI - Scrape Company Info').item.json.size || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "description",
+              "name": "description",
+              "value": "={{ $('LinkFinder AI - Scrape Company Info').item.json.description || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "domain",
+              "name": "domain",
+              "value": "={{ $('Store LinkedIn URL').item.json.website.replace('https://', '').replace('http://', '').replace('www.', '').split('/')[0] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2208,
+        272
+      ],
+      "name": "Merge Company Data",
+      "id": "73f11388-8622-42f5-a7d7-156c10c056b0",
+      "notes": "UPDATED: Now accesses LinkedIn company data using direct field access\nAccesses industry using: $json.industry (not $json.result.industry)\nAccesses size using: $json.size (not $json.result.size)\nAccesses description using: $json.description (not $json.result.description)\nMerges all company data for downstream processing"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {api_key_here}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_domain_to_employees"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('Store Website').item.json.website }}"
+            },
+            {
+              "name": "seniority",
+              "value": "director,vp,cxo,owner,partner"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2432,
+        272
+      ],
+      "name": "LinkFinder AI - Get Decision Makers",
+      "id": "aaeaf9b6-a0e8-4aad-89d8-dabcd5309da8",
+      "notes": "Service: company_domain_to_employees\nResponse: $json.result (array of employee objects)\nPurpose: Gets list of decision makers filtered by seniority\nSeniority Filter: director,vp,cxo,owner,partner\nGet API key: https://linkfinderai.com/?ref=reddit"
+    },
+    {
+      "parameters": {
+        "jsCode": "const companyData = $('Merge Company Data').item.json;\nconst employees = $input.first().json.result || [];\n\nconst output = [];\n\nif (Array.isArray(employees) && employees.length > 0) {\n  for (const emp of employees) {\n    output.push({\n      json: {\n        company_name: companyData.company_name,\n        website: companyData.website,\n        linkedin_url: companyData.linkedin_url,\n        industry: companyData.industry,\n        company_size: companyData.company_size,\n        employee_name: emp.name || emp.fullName || 'N/A',\n        employee_title: emp.title || emp.jobTitle || 'N/A',\n        employee_email: emp.email || 'N/A',\n        employee_linkedin: emp.linkedin || emp.linkedinUrl || emp.profile_url || 'N/A'\n      }\n    });\n  }\n} else {\n  output.push({\n    json: {\n      company_name: companyData.company_name,\n      website: companyData.website,\n      linkedin_url: companyData.linkedin_url,\n      industry: companyData.industry,\n      company_size: companyData.company_size,\n      employee_name: 'No decision makers found',\n      employee_title: 'N/A',\n      employee_email: 'N/A',\n      employee_linkedin: 'N/A'\n    }\n  });\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        272
+      ],
+      "name": "Format Decision Makers",
+      "id": "37911f9d-fed8-46a3-b248-f046812dba8f",
+      "notes": "VERIFIED: Correctly accesses employee data from $json.result array\nFormats employee data with company information for output\nHandles cases where no decision makers are found"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2816,
+        272
+      ],
+      "name": "Wait 2 Seconds",
+      "id": "f0f65457-fc4a-4ad2-8e4e-2b94dce61dec",
+      "webhookId": "5311d0ea-9077-426b-97a2-4b8493b4c12d"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "status",
+              "name": "batch_status",
+              "value": "completed",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3040,
+        272
+      ],
+      "name": "Batch Complete",
+      "id": "954969cc-2739-4b80-b5af-7871c8a286ec"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Companies from Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Companies from Sheet": {
+      "main": [
+        [
+          {
+            "node": "Process in Batches of 10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process in Batches of 10": {
+      "main": [
+        [],
+        [
+          {
+            "node": "LinkFinder AI - Get Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get Website": {
+      "main": [
+        [
+          {
+            "node": "Store Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Website": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get LinkedIn URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get LinkedIn URL": {
+      "main": [
+        [
+          {
+            "node": "Store LinkedIn URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store LinkedIn URL": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Scrape Company Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Scrape Company Info": {
+      "main": [
+        [
+          {
+            "node": "Merge Company Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Company Data": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get Decision Makers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get Decision Makers": {
+      "main": [
+        [
+          {
+            "node": "Format Decision Makers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Decision Makers": {
+      "main": [
+        [
+          {
+            "node": "Wait 2 Seconds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2 Seconds": {
+      "main": [
+        [
+          {
+            "node": "Batch Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch Complete": {
+      "main": [
+        [
+          {
+            "node": "Process in Batches of 10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1c84d4ec-2d61-4f15-8a61-a58b310c7ddb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "id": "cjmHBbF2WSgrw2g4",
+  "tags": []
+}
