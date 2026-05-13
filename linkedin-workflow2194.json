@@ -1,0 +1,367 @@
+{
+  "name": "Company Employees LinkedIn Scraper — LinkFinder AI",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "⚡ WORKFLOW OPTIMIZED WITH LINKFINDER AI ⚡\n\nThis workflow uses LinkFinder AI services for company and employee enrichment.\n\nSetup Instructions:\n1. Get your API key: https://linkfinderai.com/?ref=reddit\n2. Replace ALL instances of {api_key_here} with your actual API key\n3. Configure Google Sheets destination\n4. Test with a company name\n\nLinkFinder AI Services Used:\n- company_name_to_website (Response: $json.result)\n- company_domain_to_employees (Response: Direct field access)\n\nWorkflow Flow:\n1. Input company name via chat\n2. Get company domain\n3. Extract all employees\n4. Save enriched data to Google Sheets",
+        "height": 400,
+        "width": 480,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        -64
+      ],
+      "id": "workflow_documentation",
+      "name": "Workflow Documentation"
+    },
+    {
+      "parameters": {
+        "content": "## Step 1 — Chat Input\nType the company NAME you want to scrape.\n\nExample: **Microsoft**, **Salesforce**, **Tesla**\n\nThe workflow will:\n1. Find the company domain\n2. Extract all employees\n3. Enrich each with email\n4. Save to Google Sheets",
+        "height": 620,
+        "width": 360
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -64
+      ],
+      "id": "817529c4-db7b-4101-9466-d7d5ad30ddb1",
+      "name": "Sticky Note — Input"
+    },
+    {
+      "parameters": {
+        "content": "## Step 2 — Find Company domain\nUses LinkFinder AI `company_name_to_website`\n\n⚠️ Add your API key:\nhttps://linkfinderai.com → Dashboard → Settings → API Key\n\nResponse Structure: $json.result",
+        "height": 600,
+        "width": 480,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        880,
+        16
+      ],
+      "id": "1d7bbab7-ae38-41eb-894f-fcc1c19413f9",
+      "name": "Sticky Note — Find URL"
+    },
+    {
+      "parameters": {
+        "content": "## Step 3 — Get Employees\nUses LinkFinder AI `company_domain_to_employees`\n\nReturns all employees with name, title, LinkedIn URL.\n\nResponse Structure: Direct field access\n- $json.name\n- $json.jobTitle\n- $json.company\n- $json.email\n- $json.linkedinUrl\n- $json.headline\n- $json.city, $json.state, $json.country\n\nBatch: 25 per request, 25s interval to respect rate limits.",
+        "height": 600,
+        "width": 528,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        16
+      ],
+      "id": "af73d133-94ec-46e6-901b-887f4431050b",
+      "name": "Sticky Note — Employees"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        128,
+        208
+      ],
+      "id": "d143e282-c8ac-40bd-b663-8717ebf0add3",
+      "name": "When chat message received",
+      "webhookId": "linkfinder-employees-trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {api_key_here}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_domain_to_employees"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.result }}"
+            },
+            {
+              "name": "department",
+              "value": "marketing"
+            },
+            {
+              "name": "seniority",
+              "value": "director"
+            },
+            {
+              "name": "employee_count",
+              "value": "10"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 25,
+              "batchInterval": 25000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2128,
+        208
+      ],
+      "id": "38e00572-4648-4544-8ec8-b4e8051e6f49",
+      "name": "Find Company Employees",
+      "notes": "LinkFinder AI Service: company_domain_to_employees\nResponse: Direct field access (no .result)\nFields: name, jobTitle, company, email, linkedinUrl, headline, city, state, country\nGet API key: https://linkfinderai.com/?ref=reddit\nIMPORTANT: Downstream nodes access fields directly like $json.name",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1TqIhTuxIuis2nPiAVUFajcpeoWPTKAJzx8vk72cFw58/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TqIhTuxIuis2nPiAVUFajcpeoWPTKAJzx8vk72cFw58/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.name }}",
+            "job": "={{ $json.jobTitle }}",
+            "company": "={{ $json.company }}",
+            "location": "={{ $json.city }} {{ $json.state }} {{ $json.country }}",
+            "website": "={{ $('LinkFinder AI - Get Company Domain').first().json.result }}",
+            "email": "={{ $json.email }}",
+            "headline": "={{ $json.headline }}",
+            "linkedinUrl": "={{ $json.linkedinUrl }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job",
+              "displayName": "job",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "education",
+              "displayName": "education",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "headline",
+              "displayName": "headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedinUrl",
+              "displayName": "linkedinUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2992,
+        224
+      ],
+      "id": "37382359-0cb1-4cef-a34f-925c56f98573",
+      "name": "Save to Google Sheets",
+      "notes": "UPDATED: References to 'Find Company Domain' changed to 'LinkFinder AI - Get Company Domain'\nWebsite field now uses: $('LinkFinder AI - Get Company Domain').first().json.result\nEmployee fields access data directly from Find Company Employees node",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o8l5meOpqkwP3c5u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {api_key_here}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_website"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.chatInput }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1072,
+        208
+      ],
+      "id": "1885727f-6b24-4a96-bc9e-8a0410b37316",
+      "name": "LinkFinder AI - Get Company Domain",
+      "notes": "LinkFinder AI Service: company_name_to_website\nResponse: $json.result (contains company domain/website)\nInput: Takes company name from chat trigger\nGet API key: https://linkfinderai.com/?ref=reddit\nIMPORTANT: Downstream nodes must use $json.result to access the domain",
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Get Company Domain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Company Employees": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Get Company Domain": {
+      "main": [
+        [
+          {
+            "node": "Find Company Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d099e49c-9f7d-4d50-813b-195a28049ede",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "id": "o8g4IHsROvtI4KW5",
+  "tags": []
+}
