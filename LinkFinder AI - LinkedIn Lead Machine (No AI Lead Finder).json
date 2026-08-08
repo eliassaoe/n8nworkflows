@@ -1,0 +1,420 @@
+{
+  "name": "LinkFinder AI - LinkedIn Lead Machine (No AI Lead Finder)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "633b237c-d06a-4bd9-9d6c-9fda213b6686",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1536,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "t1",
+              "name": "companies",
+              "type": "array",
+              "value": "=[\"Tesla\", \"Notion\", \"Ramp\"]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6a3c4ed2-144c-43d1-9c6d-73682aff4f66",
+      "name": "Target Companies",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1328,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "companies",
+        "options": {
+          "destinationFieldName": "company_name"
+        }
+      },
+      "id": "3669bcb9-d571-4f0f-8f4c-918f51a8c79d",
+      "name": "Split Companies",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_website"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.company_name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5411280f-b235-4665-a053-6dc3e3776618",
+      "name": "Company Name to Website",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -880,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "company_name",
+              "type": "string",
+              "value": "={{ $('Split Companies').item.json.company_name }}"
+            },
+            {
+              "id": "d2",
+              "name": "domain",
+              "type": "string",
+              "value": "={{ $json.result }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d531b1bf-e24c-4fe6-89f9-9ff0bf8aee5b",
+      "name": "Extract Domain",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -656,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_domain_to_employees"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.domain }}"
+            },
+            {
+              "name": "seniority",
+              "value": "C_Suite"
+            },
+            {
+              "name": "department",
+              "value": "marketing"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "37a414aa-1f63-4c06-bc67-68bed16d60d8",
+      "name": "Company Domain to Employees",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -448,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1T5FbLoN9UE0S7IA-P53TBANOEftctnXw5Y78h8GvaPo",
+          "mode": "list",
+          "cachedResultName": "lead videos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1T5FbLoN9UE0S7IA-P53TBANOEftctnXw5Y78h8GvaPo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1T5FbLoN9UE0S7IA-P53TBANOEftctnXw5Y78h8GvaPo/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.name }}",
+            "title": "={{ $json.jobTitle }}",
+            "email": "={{ $json.email }}",
+            "company": "={{ $json.company }}",
+            "city": "={{ $json.city }}",
+            "state": "={{ $json.state }}",
+            "country": "={{ $json.country }}",
+            "industry": "={{ $json.industry }}",
+            "headline": "={{ $json.headline }}",
+            "linkedinURL": "={{ $json.linkedinUrl }}",
+            "company linkedin": "={{ $json.companylinkedinurl }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "headline",
+              "displayName": "headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedinURL",
+              "displayName": "linkedinURL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company linkedin",
+              "displayName": "company linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ny linkedin",
+              "displayName": "ny linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "b08ddcc0-5dc9-4437-a8d4-33e899f25d96",
+      "name": "Save Lead to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -192,
+        128
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o8l5meOpqkwP3c5u",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Target Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Target Companies": {
+      "main": [
+        [
+          {
+            "node": "Split Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Companies": {
+      "main": [
+        [
+          {
+            "node": "Company Name to Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Name to Website": {
+      "main": [
+        [
+          {
+            "node": "Extract Domain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Domain": {
+      "main": [
+        [
+          {
+            "node": "Company Domain to Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Domain to Employees": {
+      "main": [
+        [
+          {
+            "node": "Save Lead to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f61f38a9-dd50-4e4b-8ef9-585180fd217c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "nodeGroups": [],
+  "id": "eaRHh4kUEMb1IEhp",
+  "tags": []
+}
