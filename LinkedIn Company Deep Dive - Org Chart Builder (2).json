@@ -1,0 +1,441 @@
+{
+  "name": "LinkedIn Company Deep Dive - Org Chart Builder",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🏢 LinkedIn Company Deep Dive - Org Chart Builder\n\n**What it does:** Extracts complete company intelligence from LinkedIn - processes MULTIPLE company URLs to build full organizational profiles with leadership details.\n\n**Input:** Array of LinkedIn company URLs (e.g., 10-20 companies)\n\n**Output:** Complete org chart for EACH company including:\n- Company details (name, industry, size, website)\n- Employee count\n- Full employee roster\n- Leadership profiles with bios\n\n**Scalability:** Processes up to 20 companies in batches of 5, extracting 10+ employee profiles per company\n\n**Setup:**\n1. Get API key from https://linkfinderai.com\n2. Replace YOUR_API_KEY_HERE in all LinkFinder AI nodes (5 total)\n3. Edit input data with your company URLs\n4. Test the workflow\n\n**Services used:**\n- linkedin_company_to_linkedin_info\n- linkedin_company_to_employees\n- linkedin_profile_to_linkedin_info\n\n**Perfect for:**\n- Sales teams building account maps\n- Recruiters mapping organizations\n- Competitive intelligence\n- Market research on multiple companies",
+        "height": 420,
+        "width": 380,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1792,
+        320
+      ],
+      "name": "📖 Documentation",
+      "id": "8b65c8c9-e58c-4f94-b5f2-5a89567f122f"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -912,
+        544
+      ],
+      "name": "Split Into Batches",
+      "id": "f7d86b41-f8cc-4ab5-b5d4-ce128098d1f1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_company_to_linkedin_info"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.result }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -144,
+        544
+      ],
+      "name": "LinkFinder AI - Company Info",
+      "id": "116f8dd6-f48b-43d8-95a3-90b30cbb7fef"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -96
+      ],
+      "name": "Aggregate All Results",
+      "id": "1b6d1d50-a631-4f3a-a71d-5da117dde0e1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.company }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        544
+      ],
+      "name": "LinkFinder AI - Find Company Linkedin Url",
+      "id": "c696acd8-64c8-44df-8907-c10238d57fdc"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b5840127-170a-476a-8dfd-517c48294937",
+              "name": "companyname",
+              "value": "={{ $('LinkFinder AI - Company Info').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "213b984f-f43d-4e30-b8b9-47fd0b7dc12a",
+              "name": "company_description",
+              "value": "={{ $('LinkFinder AI - Company Info').item.json.company_description }}",
+              "type": "string"
+            },
+            {
+              "id": "e3eb8bc9-b5cd-47da-a807-df208eb2decb",
+              "name": "location",
+              "value": "={{ $('LinkFinder AI - Company Info').item.json.city }},{{ $('LinkFinder AI - Company Info').item.json.country }}",
+              "type": "string"
+            },
+            {
+              "id": "fe224dbe-a868-422b-b8ee-5bd4a208f2a9",
+              "name": "website",
+              "value": "={{ $('LinkFinder AI - Company Info').item.json.website }}",
+              "type": "string"
+            },
+            {
+              "id": "d8ac18f4-42fd-488e-97d0-3d1ad4bd85c0",
+              "name": "company_size",
+              "value": "={{ $('LinkFinder AI - Company Info').item.json.employeeCount }}",
+              "type": "string"
+            },
+            {
+              "id": "ebbaf36a-3096-4436-91bc-f1125bf60b63",
+              "name": "specialties",
+              "value": "={{ $('LinkFinder AI - Company Info').item.json.specialties }}",
+              "type": "string"
+            },
+            {
+              "id": "62a185dc-5771-4ebb-b432-53618b3c18f1",
+              "name": "industry",
+              "value": "={{ $('LinkFinder AI - Company Info').item.json.industry }}",
+              "type": "string"
+            },
+            {
+              "id": "a8dd387d-1323-49b4-a44e-1b0d21315649",
+              "name": "Company email",
+              "value": "={{ $('LinkFinder AI - Find Company Email').item.json.result }}",
+              "type": "string"
+            },
+            {
+              "id": "4d6261e1-2b84-4454-9245-a1b9f9a59f35",
+              "name": "Company phone",
+              "value": "={{ $('LinkFinder AI - Find Company Phone').item.json.result }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        752,
+        544
+      ],
+      "id": "740d1689-116f-4082-a793-f24d7ce7b732",
+      "name": "Merge format",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1uYSKmZR8Q4FWFbwqwIEKPZ44TMtuygvILV4xqkVqhcg",
+          "mode": "list",
+          "cachedResultName": "companies to enrich",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1uYSKmZR8Q4FWFbwqwIEKPZ44TMtuygvILV4xqkVqhcg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1uYSKmZR8Q4FWFbwqwIEKPZ44TMtuygvILV4xqkVqhcg/edit#gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1264,
+        544
+      ],
+      "id": "bc370802-db3e-4bc9-a124-65c8180e4010",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "mi5z7FRamyMvmQoQ",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_phone"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        544
+      ],
+      "name": "LinkFinder AI - Find Company Phone",
+      "id": "c10fd15c-a65f-4c18-9c89-24762602f5e2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_email"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('LinkFinder AI - Company Info').item.json.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        544
+      ],
+      "name": "LinkFinder AI - Find Company Email",
+      "id": "d5e309f9-c995-465d-8624-6f7ae67f6dce"
+    },
+    {
+      "parameters": {
+        "content": "FIND YOUR API KEY FOR LINKFINDER AI : https://linkfinderai.com/\n\nAND replace api in each Linkfinder ai node",
+        "height": 244,
+        "width": 380,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        208,
+        208
+      ],
+      "name": "📖 Documentation1",
+      "id": "d63f859c-d2c2-43cd-8657-939cdc2a24d9"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Split Into Batches": {
+      "main": [
+        [
+          {
+            "node": "Aggregate All Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LinkFinder AI - Find Company Linkedin Url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Company Info": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Find Company Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Find Company Linkedin Url": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Company Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge format": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Find Company Phone": {
+      "main": [
+        [
+          {
+            "node": "LinkFinder AI - Find Company Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkFinder AI - Find Company Email": {
+      "main": [
+        [
+          {
+            "node": "Merge format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "2f15cbb0-f76f-42d6-b1dc-1c9d9ad78213",
+  "meta": {
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "nodeGroups": [],
+  "id": "ZgsRNdgxkNAWWC0g",
+  "tags": []
+}
