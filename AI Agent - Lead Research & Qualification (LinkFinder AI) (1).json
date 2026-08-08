@@ -1,0 +1,1398 @@
+{
+  "name": "AI Agent - Lead Research & Qualification (LinkFinder AI)",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 81Z69Z72Z7eZ7dZ52Z70Z3fZ6eZ48Z50Z60Z39Z76Z3dZ73"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_website"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('Google Sheets Trigger').item.json.company_name }}"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "id": "5b50d932-a387-4947-9fa5-e91803926fcb",
+      "name": "Company Name to Website",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2160,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "full_name",
+              "type": "string",
+              "value": "={{ $('Google Sheets Trigger').item.json.full_name }}"
+            },
+            {
+              "id": "d2",
+              "name": "linkedin_url",
+              "type": "string",
+              "value": "={{ $('Find linkedin profile url').item.json.result }}"
+            },
+            {
+              "id": "d3",
+              "name": "company_name",
+              "type": "string",
+              "value": "={{ $('Google Sheets Trigger').item.json.company_name }}"
+            },
+            {
+              "id": "d4",
+              "name": "company_domain",
+              "type": "string",
+              "value": "={{ $json.result }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "de91dcfe-5e99-4a0b-b9dd-9c67c10f9ce2",
+      "name": "Attach Domain",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1936,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 81Z69Z72Z7eZ7dZ52Z70Z3fZ6eZ48Z50Z60Z39Z76Z3dZ73"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_profile_to_linkedin_info"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.linkedin_url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ba40cec9-240d-48d5-b281-fa8ddbfd5169",
+      "name": "LinkedIn Profile Lookup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1488,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('LinkedIn Profile Lookup').item.json.poll_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 81Z69Z72Z7eZ7dZ52Z70Z3fZ6eZ48Z50Z60Z39Z76Z3dZ73"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "30c862f4-6ada-4e54-ac93-5017f2a4d193",
+      "name": "Poll Profile Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1088,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "g1",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "21a2a69b-a1c9-4943-98d7-486e62467029",
+      "name": "Profile Job Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -912,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Research and qualify this sales lead against our Ideal Customer Profile (ICP).\n\nICP: B2B SaaS or tech company, 50-500 employees, target person holds a VP/Director/Head-level title in Sales, Marketing, or RevOps, based in the US or Europe.\n\nLead data:\nName: {{ $json.data.name }}\njob : {{ $json.data.jobTitle }}\nLinkedIn: {{ $json.data.linkedinUrl }}\nCompany: {{ $json.data.company }}\nlocation : {{ $json.data.location }}\nLinkedIn profile details: {{ $json.data.about }}\n\n\nUse the 'Check Company Headcount' tool to look up the company's current employee count on its name before deciding — do not guess headcount. Then decide if this lead fits the ICP and return your structured qualification.",
+        "options": {
+          "systemMessage": "You are a B2B sales development researcher. You qualify inbound and outbound leads against a defined ICP using the data provided plus any tools available to you. Be strict: only mark a lead as qualified if title seniority, company size, and industry all reasonably fit. Always explain your reasoning briefly and suggest a concrete next step (e.g. 'send intro email referencing X', 'skip - too small', 'escalate to AE')."
+        }
+      },
+      "id": "3f58822b-a71f-420a-8a91-d7dbd506f6fc",
+      "name": "Qualify Lead (AI Agent)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -624,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Look up the current employee headcount for a company by domain, using LinkFinder AI. Input should be just the company's name (e.g. notion).",
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 81Z69Z72Z7eZ7dZ52Z70Z3fZ6eZ48Z50Z60Z39Z76Z3dZ73"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_employee_count"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $fromAI('domain', 'the company domain to look up', 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d387a01e-d0d9-49c6-99e4-ff9f77862821",
+      "name": "Check Company Headcount",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -416,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "k1",
+              "leftValue": "={{ $json.qualified }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f524fc3c-55a0-4dc7-8439-2eca273984cd",
+      "name": "Qualified?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -16,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Pchp5nctjGY42ufiqP1IyFt2TCC3WnATUQa2uRjKhy0",
+          "mode": "list",
+          "cachedResultName": "unqualified leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Pchp5nctjGY42ufiqP1IyFt2TCC3WnATUQa2uRjKhy0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Pchp5nctjGY42ufiqP1IyFt2TCC3WnATUQa2uRjKhy0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Poll Profile Job').item.json.data.name }}",
+            "job": "={{ $('Poll Profile Job').item.json.data.jobTitle }}",
+            "company": "={{ $('Poll Profile Job').item.json.data.company }}",
+            "location": "={{ $('Poll Profile Job').item.json.data.location }}",
+            "about": "={{ $('Poll Profile Job').item.json.data.about }}",
+            "headline": "={{ $('Poll Profile Job').item.json.data.headline }}",
+            "linkedin url ": "={{ $('Poll Profile Job').item.json.data.linkedinUrl }}",
+            "linkedin company url": "={{ $('Poll Profile Job').item.json.data.company_linkedin_url }}"
+          },
+          "matchingColumns": [
+            "name"
+          ],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "job",
+              "displayName": "job",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "about",
+              "displayName": "about",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "headline",
+              "displayName": "headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "linkedin url ",
+              "displayName": "linkedin url ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "linkedin company url",
+              "displayName": "linkedin company url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "aeadcf06-cd2e-4445-b101-a1ac71a3800f",
+      "name": "Log Unqualified Lead",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        416,
+        320
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o8l5meOpqkwP3c5u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1vmxZqeydurt2zpJ-5acxbHGO1IUfQK9m8gJJxdiVR28",
+          "mode": "list",
+          "cachedResultName": "leads to enrich",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vmxZqeydurt2zpJ-5acxbHGO1IUfQK9m8gJJxdiVR28/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 430758706,
+          "mode": "list",
+          "cachedResultName": "leads (16)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vmxZqeydurt2zpJ-5acxbHGO1IUfQK9m8gJJxdiVR28/edit#gid=430758706"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2864,
+        128
+      ],
+      "id": "2c561d38-c226-47fa-a819-aa3ecad79a50",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "mi5z7FRamyMvmQoQ",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "id": "e9e9df39-dffd-4fe8-8ff8-8ece1bf47192",
+      "name": "Wait 1min (Profile)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1264,
+        128
+      ],
+      "webhookId": "89f5ffe7-4f7e-49b4-9113-ca6465b41534"
+    },
+    {
+      "parameters": {
+        "model": "=x-ai/grok-4.3",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        -656,
+        320
+      ],
+      "id": "c30284b3-b362-4bab-9f75-70f7f2d6c5d7",
+      "name": "OpenAI Chat Model4",
+      "credentials": {
+        "openAiApi": {
+          "id": "1GzyTXCepEHAzTiq",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 81Z69Z72Z7eZ7dZ52Z70Z3fZ6eZ48Z50Z60Z39Z76Z3dZ73"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "lead_full_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.full_name }} {{ $json.company_name }}"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "id": "72f0bc13-01da-49be-891a-dd1deccec480",
+      "name": "Find linkedin profile url",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2608,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c7c60da3-9b1b-47eb-8ef6-941a1ac462d4",
+              "leftValue": "={{ $json.result }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2400,
+        128
+      ],
+      "id": "d6856b82-7740-4f77-adcf-d60e4cfe31a2",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1696,
+        128
+      ],
+      "id": "c0ac5cdd-0e22-42e2-8ae6-7b10a1342692",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "function parseQualificationOutput(text) {\n  const qualified = /not qualified/i.test(text) === false && /qualified/i.test(text);\n\n  const reasoningMatch = text.match(/\\*\\*Reasoning:\\*\\*\\s*([\\s\\S]*?)\\*\\*Next step:\\*\\*/i);\n  const reasoning = reasoningMatch\n    ? reasoningMatch[1]\n        .split('\\n')\n        .map(line => line.replace(/^[-•\\s]+/, '').trim())\n        .filter(Boolean)\n        .join(' ')\n    : '';\n\n  const nextStepMatch = text.match(/\\*\\*Next step:\\*\\*\\s*([\\s\\S]*)/i);\n  const next_step = nextStepMatch ? nextStepMatch[1].trim() : '';\n\n  return { qualified, reasoning, next_step };\n}\n\n// Pull the actual text from the AI Agent node's output\nconst raw = $input.item.json.output;\n\nreturn parseQualificationOutput(raw);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -304,
+        128
+      ],
+      "id": "ea9e860d-fe91-43c3-85b9-d5ff62231b23",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1xkM1D7ns6wpyg_r5gd7LxWjeYu0MiUhbXjAl8RdvYGs",
+          "mode": "list",
+          "cachedResultName": "qualified leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xkM1D7ns6wpyg_r5gd7LxWjeYu0MiUhbXjAl8RdvYGs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xkM1D7ns6wpyg_r5gd7LxWjeYu0MiUhbXjAl8RdvYGs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Poll Profile Job').item.json.data.name }}",
+            "job": "={{ $('Poll Profile Job').item.json.data.jobTitle }}",
+            "company": "={{ $('Poll Profile Job').item.json.data.company }}",
+            "location": "={{ $('Poll Profile Job').item.json.data.location }}",
+            "about": "={{ $('Poll Profile Job').item.json.data.about }}",
+            "headline": "={{ $('Poll Profile Job').item.json.data.headline }}",
+            "linkedin url ": "={{ $('Poll Profile Job').item.json.data.linkedinUrl }}",
+            "linkedin company url": "={{ $('Poll Profile Job').item.json.data.company_linkedin_url }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job",
+              "displayName": "job",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "about",
+              "displayName": "about",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "headline",
+              "displayName": "headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedin url ",
+              "displayName": "linkedin url ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedin company url",
+              "displayName": "linkedin company url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "52ad05d0-5bed-4cdb-9d17-fd9f479f81bf",
+      "name": "qualified Lead",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        416,
+        -112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o8l5meOpqkwP3c5u",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Google Sheets Trigger": [
+      {
+        "json": {
+          "full_name": "Bill Gates",
+          "company_name": "Microsoft"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Satya Nadella",
+          "company_name": "Microsoft"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Tim Cook",
+          "company_name": "Apple"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Sundar Pichai",
+          "company_name": "Google"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Andy Jassy",
+          "company_name": "Amazon"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Jeff Bezos",
+          "company_name": "Amazon"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Mark Zuckerberg",
+          "company_name": "Meta"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Elon Musk",
+          "company_name": "Tesla"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Sam Altman",
+          "company_name": "OpenAI"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Dario Amodei",
+          "company_name": "Anthropic"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Jensen Huang",
+          "company_name": "NVIDIA"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Lisa Su",
+          "company_name": "AMD"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Marc Benioff",
+          "company_name": "Salesforce"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Daniel Ek",
+          "company_name": "Spotify"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Reed Hastings",
+          "company_name": "Netflix"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Ted Sarandos",
+          "company_name": "Netflix"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Brian Chesky",
+          "company_name": "Airbnb"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Dara Khosrowshahi",
+          "company_name": "Uber"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Patrick Collison",
+          "company_name": "Stripe"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "John Collison",
+          "company_name": "Stripe"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Drew Houston",
+          "company_name": "Dropbox"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Aaron Levie",
+          "company_name": "Box"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Melanie Perkins",
+          "company_name": "Canva"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Tobi Lutke",
+          "company_name": "Shopify"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Parker Conrad",
+          "company_name": "Rippling"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Frank Slootman",
+          "company_name": "Snowflake"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Ali Ghodsi",
+          "company_name": "Databricks"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Arvind Krishna",
+          "company_name": "IBM"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Safra Catz",
+          "company_name": "Oracle"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Thomas Kurian",
+          "company_name": "Google Cloud"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Shantanu Narayen",
+          "company_name": "Adobe"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Chuck Robbins",
+          "company_name": "Cisco"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Pat Gelsinger",
+          "company_name": "Intel"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Lip-Bu Tan",
+          "company_name": "Intel"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Stewart Butterfield",
+          "company_name": "Slack"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Dylan Field",
+          "company_name": "Figma"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Ivan Zhao",
+          "company_name": "Notion"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Karri Saarinen",
+          "company_name": "Linear"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Eric Yuan",
+          "company_name": "Zoom"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Jyoti Bansal",
+          "company_name": "Harness"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "David Solomon",
+          "company_name": "Goldman Sachs"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Jamie Dimon",
+          "company_name": "JPMorgan Chase"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Mary Barra",
+          "company_name": "General Motors"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Jim Farley",
+          "company_name": "Ford"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Doug McMillon",
+          "company_name": "Walmart"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Brian Niccol",
+          "company_name": "Starbucks"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Bob Iger",
+          "company_name": "Disney"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Michael Dell",
+          "company_name": "Dell Technologies"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Antonio Neri",
+          "company_name": "Hewlett Packard Enterprise"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "full_name": "Julie Sweet",
+          "company_name": "Accenture"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Company Name to Website": {
+      "main": [
+        [
+          {
+            "node": "Attach Domain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Domain": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Profile Lookup": {
+      "main": [
+        [
+          {
+            "node": "Wait 1min (Profile)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll Profile Job": {
+      "main": [
+        [
+          {
+            "node": "Profile Job Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Profile Job Done?": {
+      "main": [
+        [
+          {
+            "node": "Qualify Lead (AI Agent)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 1min (Profile)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Company Headcount": {
+      "ai_tool": [
+        [
+          {
+            "node": "Qualify Lead (AI Agent)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualify Lead (AI Agent)": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualified?": {
+      "main": [
+        [
+          {
+            "node": "qualified Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Unqualified Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Find linkedin profile url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1min (Profile)": {
+      "main": [
+        [
+          {
+            "node": "Poll Profile Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Qualify Lead (AI Agent)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find linkedin profile url": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Company Name to Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "LinkedIn Profile Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Unqualified Lead": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Qualified?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "qualified Lead": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "48bad5ae-0536-4fde-ae93-539c265bf037",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "nodeGroups": [],
+  "id": "e2Z5TVKDUT5d2b3W",
+  "tags": []
+}
