@@ -1,0 +1,1086 @@
+{
+  "name": "Automated Lead Email Finder + Personalized Writer (LinkFinder AI)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "62b0113a-19cb-4cb4-b4ac-ee7ef5007b37",
+      "name": "Daily at 8am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1616,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1A4tC1nooY-VM7tLzdmcp0WI5MBPGwF5yIyoeKHd63HY",
+          "mode": "list",
+          "cachedResultName": "target companies",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1A4tC1nooY-VM7tLzdmcp0WI5MBPGwF5yIyoeKHd63HY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1A4tC1nooY-VM7tLzdmcp0WI5MBPGwF5yIyoeKHd63HY/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "b24e88ce-8f28-4a1e-8d22-709e034d03be",
+      "name": "Get Target Companies",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1392,
+        16
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o8l5meOpqkwP3c5u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_website"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.company_name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "20dc923a-57c3-43b8-a48d-944f34370dd0",
+      "name": "Company Name to Website",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1168,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "company_name",
+              "type": "string",
+              "value": "={{ $('Get Target Companies').item.json.company_name }}"
+            },
+            {
+              "id": "a2",
+              "name": "department",
+              "type": "string",
+              "value": "={{ $('Get Target Companies').item.json.department }}"
+            },
+            {
+              "id": "a3",
+              "name": "seniority",
+              "type": "string",
+              "value": "={{ $('Get Target Companies').item.json.seniority }}"
+            },
+            {
+              "id": "a4",
+              "name": "domain",
+              "type": "string",
+              "value": "={{ $json.result }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cbf024cd-3ae9-4b4f-ba23-ec7d8b9d3e82",
+      "name": "Attach Domain",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -944,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_domain_to_employees"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.domain }}"
+            },
+            {
+              "name": "department",
+              "value": "={{ $json.department }}"
+            },
+            {
+              "name": "seniority",
+              "value": "={{ $json.seniority }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "48cef0e0-df4e-4e99-8acc-7e53b32a0898",
+      "name": "Company Domain to Employees",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -736,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "176724ce-182e-4387-a759-ba32fcda04fa",
+      "name": "Loop Over New Employees",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -224,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "id": "6d95272d-b726-4534-8b05-63578bbb1950",
+      "name": "Wait (Rate Limit)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        160,
+        -112
+      ],
+      "webhookId": "a87351b3-bf98-4f39-9e2e-d903d29fc4b8"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "h1",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c9433001-2d98-42c0-9d7f-439480c01d47",
+      "name": "Has Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        384,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_profile_to_email"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.linkedinUrl }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "253064c5-d1fc-4529-8f7a-ec096e2353e4",
+      "name": "Find Person's Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        592,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "i1",
+              "leftValue": "={{ $json.result }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2376823d-c943-4577-9ab4-b23d9853f2ef",
+      "name": "Email Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        816,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "full_name",
+              "type": "string",
+              "value": "={{ $('Loop Over New Employees').item.json.name }}"
+            },
+            {
+              "id": "b2",
+              "name": "title",
+              "type": "string",
+              "value": "={{ $('Loop Over New Employees').item.json.jobTitle }}"
+            },
+            {
+              "id": "b3",
+              "name": "linkedin_url",
+              "type": "string",
+              "value": "={{ $('Loop Over New Employees').item.json.linkedinUrl }}"
+            },
+            {
+              "id": "b4",
+              "name": "company_name",
+              "type": "string",
+              "value": "={{ $('Attach Domain').item.json.company_name }}"
+            },
+            {
+              "id": "b5",
+              "name": "company_domain",
+              "type": "string",
+              "value": "={{ $('Attach Domain').item.json.domain }}"
+            },
+            {
+              "id": "b6",
+              "name": "email",
+              "type": "string",
+              "value": "={{ $json.result }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f0ad4ae3-7d7d-45b7-87e6-46e055c34f02",
+      "name": "Prepare Lead (Found Email)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1088,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "full_name",
+              "type": "string",
+              "value": "={{ $('Loop Over New Employees').item.json.employee.full_name }}"
+            },
+            {
+              "id": "c2",
+              "name": "title",
+              "type": "string",
+              "value": "={{ $('Loop Over New Employees').item.json.employee.title }}"
+            },
+            {
+              "id": "c3",
+              "name": "linkedin_url",
+              "type": "string",
+              "value": "={{ $('Loop Over New Employees').item.json.employee.linkedin_url }}"
+            },
+            {
+              "id": "c4",
+              "name": "company_name",
+              "type": "string",
+              "value": "={{ $('Attach Domain').item.json.company_name }}"
+            },
+            {
+              "id": "c5",
+              "name": "company_domain",
+              "type": "string",
+              "value": "={{ $('Attach Domain').item.json.domain }}"
+            },
+            {
+              "id": "c6",
+              "name": "email",
+              "type": "string",
+              "value": "={{ $('Loop Over New Employees').item.json.employee.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b76d4fb9-05d1-481c-af9d-c84d6ffb5394",
+      "name": "Prepare Lead (Existing Email)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        592,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Pchp5nctjGY42ufiqP1IyFt2TCC3WnATUQa2uRjKhy0",
+          "mode": "list",
+          "cachedResultName": "unqualified leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Pchp5nctjGY42ufiqP1IyFt2TCC3WnATUQa2uRjKhy0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Pchp5nctjGY42ufiqP1IyFt2TCC3WnATUQa2uRjKhy0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "job": "={{ $('Loop Over New Employees').item.json.jobTitle }}",
+            "location": "={{ $('Loop Over New Employees').item.json.companyCity }} {{ $('Loop Over New Employees').item.json.companyState }} {{ $('Loop Over New Employees').item.json.companyCountry }}",
+            "headline": "={{ $('Loop Over New Employees').item.json.headline }}",
+            "linkedin url ": "={{ $('Loop Over New Employees').item.json.linkedinUrl }}",
+            "linkedin company url": "={{ $('Loop Over New Employees').item.json.companyLinkedinUrl }}",
+            "name": "={{ $('Loop Over New Employees').item.json.name }}",
+            "company": "={{ $('Loop Over New Employees').item.json.company }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job",
+              "displayName": "job",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "about",
+              "displayName": "about",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "headline",
+              "displayName": "headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedin url ",
+              "displayName": "linkedin url ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedin company url",
+              "displayName": "linkedin company url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c5abea11-1bb9-4959-9a70-081b5ab7036d",
+      "name": "Log No Email Found",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1312,
+        432
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o8l5meOpqkwP3c5u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a short, specific, non-salesy cold outreach email in html to this person.\n\nName: {{ $json.full_name }}\nTitle: {{ $json.title }}\nCompany: {{ $json.company_name }}\nLinkedIn: {{ $json.linkedin_url }}\n\nKeep the email under 120 words. Reference their role and company specifically — no generic filler like \"I hope this finds you well\" or \"I came across your profile\". End with a clear, low-friction call to action (e.g. asking for 15 minutes, not demanding a meeting).",
+        "hasOutputParser": true
+      },
+      "id": "1c97203e-6ada-4b3d-b7a5-201a96f7d1db",
+      "name": "Write Personalized Email",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        1296,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "={\n  \"type\": \"object\",\n  \"properties\": {\n    \"email_subject\": { \"type\": \"string\" },\n    \"email_body\": { \"type\": \"string\" }\n  },\n  \"required\": [\"email_subject\", \"email_body\"]\n}"
+      },
+      "id": "a9c0bd4d-1228-4f08-a9db-c17d5a2ae6c9",
+      "name": "Email Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1504,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "full_name",
+              "type": "string",
+              "value": "={{ $('Prepare Lead (Found Email)').item.json.full_name }}"
+            },
+            {
+              "id": "d2",
+              "name": "email",
+              "type": "string",
+              "value": "={{ $('Prepare Lead (Found Email)').item.json.email }}"
+            },
+            {
+              "id": "d3",
+              "name": "company_name",
+              "type": "string",
+              "value": "={{ $('Prepare Lead (Found Email)').item.json.company_name }}"
+            },
+            {
+              "id": "d4",
+              "name": "linkedin_url",
+              "type": "string",
+              "value": "={{ $('Prepare Lead (Found Email)').item.json.linkedin_url }}"
+            },
+            {
+              "id": "d5",
+              "name": "email_subject",
+              "type": "string",
+              "value": "={{ $json.output.email_subject }}"
+            },
+            {
+              "id": "d6",
+              "name": "email_body",
+              "type": "string",
+              "value": "={{ $json.output.email_body }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f555eb09-3fd8-4292-9696-3b781165ca1f",
+      "name": "Format Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1648,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1xkM1D7ns6wpyg_r5gd7LxWjeYu0MiUhbXjAl8RdvYGs",
+          "mode": "list",
+          "cachedResultName": "qualified leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xkM1D7ns6wpyg_r5gd7LxWjeYu0MiUhbXjAl8RdvYGs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xkM1D7ns6wpyg_r5gd7LxWjeYu0MiUhbXjAl8RdvYGs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Prepare Lead (Found Email)').item.json.full_name }}",
+            "email": "={{ $('Prepare Lead (Found Email)').item.json.email }}",
+            "company": "={{ $('Prepare Lead (Found Email)').item.json.company_name }}",
+            "headline": "={{ $('Loop Over New Employees').item.json.headline }}",
+            "job": "={{ $('Loop Over New Employees').item.json.jobTitle }}",
+            "location": "={{ $('Loop Over New Employees').item.json.companyCity }} {{ $('Loop Over New Employees').item.json.companyState }} {{ $('Loop Over New Employees').item.json.companyCountry }}",
+            "linkedin company url": "={{ $('Loop Over New Employees').item.json.companyLinkedinUrl }}",
+            "linkedin url ": "={{ $('Loop Over New Employees').item.json.linkedinUrl }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job",
+              "displayName": "job",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "about",
+              "displayName": "about",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "headline",
+              "displayName": "headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedin url ",
+              "displayName": "linkedin url ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedin company url",
+              "displayName": "linkedin company url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "78f31943-d2bd-4774-b88a-4a1f1d17caed",
+      "name": "Log Sent Email",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2080,
+        -192
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o8l5meOpqkwP3c5u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "3766087a-1cf9-4a5e-8986-4e9c27bad5e4",
+      "name": "Item Processed",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2352,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "model": "=x-ai/grok-4.3",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        32
+      ],
+      "id": "62c72be7-5c52-4f2b-91e4-c41491281394",
+      "name": "OpenAI Chat Model4",
+      "credentials": {
+        "openAiApi": {
+          "id": "1GzyTXCepEHAzTiq",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "support@linkfinderai.com",
+        "toEmail": "={{ $json.email }}",
+        "subject": "={{ $json.email_subject }}",
+        "html": "={{ $json.email_body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1856,
+        -192
+      ],
+      "id": "fd4a5f78-1108-45d8-913d-786bc483531a",
+      "name": "Send an Email",
+      "webhookId": "4381d0fc-4b4a-4dfc-b056-0d65e5c028a1",
+      "credentials": {
+        "smtp": {
+          "id": "oWCZdqtQZM62rOfS",
+          "name": "SMTP account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily at 8am": {
+      "main": [
+        [
+          {
+            "node": "Get Target Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Target Companies": {
+      "main": [
+        [
+          {
+            "node": "Company Name to Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Name to Website": {
+      "main": [
+        [
+          {
+            "node": "Attach Domain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Domain": {
+      "main": [
+        [
+          {
+            "node": "Company Domain to Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Domain to Employees": {
+      "main": [
+        [
+          {
+            "node": "Loop Over New Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over New Employees": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Wait (Rate Limit)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait (Rate Limit)": {
+      "main": [
+        [
+          {
+            "node": "Has Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Email?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Lead (Existing Email)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Person's Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Person's Email": {
+      "main": [
+        [
+          {
+            "node": "Email Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Found?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Lead (Found Email)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log No Email Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log No Email Found": {
+      "main": [
+        [
+          {
+            "node": "Item Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Lead (Existing Email)": {
+      "main": [
+        [
+          {
+            "node": "Write Personalized Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Lead (Found Email)": {
+      "main": [
+        [
+          {
+            "node": "Write Personalized Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Write Personalized Email",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Personalized Email": {
+      "main": [
+        [
+          {
+            "node": "Format Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Result": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Sent Email": {
+      "main": [
+        [
+          {
+            "node": "Item Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Item Processed": {
+      "main": [
+        [
+          {
+            "node": "Loop Over New Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Write Personalized Email",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an Email": {
+      "main": [
+        [
+          {
+            "node": "Log Sent Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "9e250036-72d7-4b63-ac85-3d0a50d15de4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "nodeGroups": [],
+  "id": "w9bJIAuVFxUlnyXE",
+  "tags": []
+}
