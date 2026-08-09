@@ -1,0 +1,818 @@
+{
+  "name": "Lead Sheet Enrichment System (LinkFinder AI)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "c392d858-7f5d-4f7a-85c2-5b6409ef62c0",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1584,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1vmxZqeydurt2zpJ-5acxbHGO1IUfQK9m8gJJxdiVR28",
+          "mode": "list",
+          "cachedResultName": "leads to enrich",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vmxZqeydurt2zpJ-5acxbHGO1IUfQK9m8gJJxdiVR28/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 430758706,
+          "mode": "list",
+          "cachedResultName": "leads (16)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vmxZqeydurt2zpJ-5acxbHGO1IUfQK9m8gJJxdiVR28/edit#gid=430758706"
+        },
+        "options": {}
+      },
+      "id": "8ad73926-8a9e-465a-b461-4ae659a6db32",
+      "name": "Get Leads To Enrich",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1360,
+        128
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o8l5meOpqkwP3c5u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f1",
+              "leftValue": "={{ $json.enrichment_status }}",
+              "rightValue": "not enriched",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "71024212-ec8c-4cb2-911f-ce10f6ba2da7",
+      "name": "Filter Not Yet Enriched",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -1136,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "id": "c9a65c62-a791-4f16-a5a5-39bfd1c4d544",
+      "name": "Limit Per Run",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a8adc3a6-22ce-4d25-86fc-07294bc61d7f",
+      "name": "Loop Over Leads",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -224,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "id": "c4e05e16-5dea-44f5-a14e-5cba5a4ddfdf",
+      "name": "Wait (Rate Limit)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "3f7b2eb6-0ef5-4230-b14f-c2bc50699d53"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 4cZ3dZ77Z7fZ60Z48Z6eZ5fZ50Z7dZ58Z75Z52Z6eZ80Z56"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_profile_to_linkedin_info"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.result }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fab2a1f0-ac46-44ba-980e-1d991ee6fcda",
+      "name": "Scrape Full LinkedIn Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.poll_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 4cZ3dZ77Z7fZ60Z48Z6eZ5fZ50Z7dZ58Z75Z52Z6eZ80Z56"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9ad66861-816f-4710-8837-323e67501abe",
+      "name": "Poll Profile Scrape Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        672,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "g1",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e3af245f-7dbe-4e20-b7c7-38af35c58d72",
+      "name": "Scrape Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 4cZ3dZ77Z7fZ60Z48Z6eZ5fZ50Z7dZ58Z75Z52Z6eZ80Z56"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_profile_to_email"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $('Find Linkedin url').item.json.result }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3c05f70c-e3bd-4a57-b1e0-35c433d46b41",
+      "name": "Find Person's Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1232,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "i1",
+              "name": "linkedin_url",
+              "type": "string",
+              "value": "={{ $('Poll Profile Scrape Job').item.json.data.linkedinUrl }}"
+            },
+            {
+              "id": "i2",
+              "name": "full_name",
+              "type": "string",
+              "value": "={{ $('Poll Profile Scrape Job').item.json.data.name }}"
+            },
+            {
+              "id": "i3",
+              "name": "company_name",
+              "type": "string",
+              "value": "={{ $('Poll Profile Scrape Job').item.json.data.company }}"
+            },
+            {
+              "id": "i4",
+              "name": "headline",
+              "type": "string",
+              "value": "={{ $('Poll Profile Scrape Job').item.json.data.headline }}"
+            },
+            {
+              "id": "i5",
+              "name": "location",
+              "type": "string",
+              "value": "={{ $('Poll Profile Scrape Job').item.json.data.location }}"
+            },
+            {
+              "id": "i6",
+              "name": "about",
+              "type": "string",
+              "value": "={{ $('Poll Profile Scrape Job').item.json.data.about }}"
+            },
+            {
+              "id": "i8",
+              "name": "email",
+              "type": "string",
+              "value": "={{ $json.result }}"
+            },
+            {
+              "id": "i9",
+              "name": "full_scraped_profile",
+              "type": "string",
+              "value": "="
+            },
+            {
+              "id": "i10",
+              "name": "enrichment_status",
+              "type": "string",
+              "value": "Enriched"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "05b29237-6a03-488c-90e2-d8ebe32ad1e3",
+      "name": "Build Enriched Record",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1472,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1vmxZqeydurt2zpJ-5acxbHGO1IUfQK9m8gJJxdiVR28",
+          "mode": "list",
+          "cachedResultName": "leads to enrich",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vmxZqeydurt2zpJ-5acxbHGO1IUfQK9m8gJJxdiVR28/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 430758706,
+          "mode": "list",
+          "cachedResultName": "leads (16)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vmxZqeydurt2zpJ-5acxbHGO1IUfQK9m8gJJxdiVR28/edit#gid=430758706"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": 0,
+            "email": "={{ $('Find Person\\'s Email').item.json.result }}",
+            "linkedin_url": "={{ $('Poll Profile Scrape Job').item.json.data.linkedinUrl }}",
+            "company_name": "={{ $('Poll Profile Scrape Job').item.json.data.company }}",
+            "full_name": "={{ $('Poll Profile Scrape Job').item.json.data.name }}",
+            "location": "={{ $('Poll Profile Scrape Job').item.json.data.location }}",
+            "enrichment_status": "Enriched",
+            "about": "={{ $('Poll Profile Scrape Job').item.json.data.about }}",
+            "website": "={{ $('Poll Profile Scrape Job').item.json.data.website }}",
+            "company_linkedin": "={{ $('Poll Profile Scrape Job').item.json.data.company_linkedin_url }}",
+            "job": "={{ $('Poll Profile Scrape Job').item.json.data.jobTitle }}"
+          },
+          "matchingColumns": [
+            "full_name"
+          ],
+          "schema": [
+            {
+              "id": "full_name",
+              "displayName": "full_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company_name",
+              "displayName": "company_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "about",
+              "displayName": "about",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "linkedin_url",
+              "displayName": "linkedin_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company_linkedin",
+              "displayName": "company_linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "job",
+              "displayName": "job",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "enrichment_status",
+              "displayName": "enrichment_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "d3b40112-cc67-434e-8211-37c63e3ce0eb",
+      "name": "Update Lead Row In Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1712,
+        32
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o8l5meOpqkwP3c5u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "27c19247-2186-44fd-b8e9-132c3f6b8d06",
+      "name": "Item Processed",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1984,
+        32
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "866e7c45-1088-47d2-a959-e07a8b90bcde",
+      "name": "Batch Complete",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        0,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 4cZ3dZ77Z7fZ60Z48Z6eZ5fZ50Z7dZ58Z75Z52Z6eZ80Z56"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "lead_full_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $json.full_name }} {{ $json.company_name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b2424e8c-2c00-4751-8321-0ed24cf3bc2d",
+      "name": "Find Linkedin url",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -752,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "id": "6e838dc1-558b-40d1-a810-d203e0695733",
+      "name": "Wait 1min (Profile Scrape)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        0
+      ],
+      "webhookId": "21ef7646-e64c-407a-b69f-046fc7b0e3bc"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4cde0059-a341-4a24-9222-126c89c14289",
+              "leftValue": "={{ $json.result }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -544,
+        128
+      ],
+      "id": "846e771f-db3a-43c2-9e6c-c16f52426113",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Leads To Enrich",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Leads To Enrich": {
+      "main": [
+        [
+          {
+            "node": "Filter Not Yet Enriched",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Not Yet Enriched": {
+      "main": [
+        [
+          {
+            "node": "Limit Per Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit Per Run": {
+      "main": [
+        [
+          {
+            "node": "Find Linkedin url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Leads": {
+      "main": [
+        [
+          {
+            "node": "Batch Complete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait (Rate Limit)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait (Rate Limit)": {
+      "main": [
+        [
+          {
+            "node": "Scrape Full LinkedIn Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Full LinkedIn Profile": {
+      "main": [
+        [
+          {
+            "node": "Wait 1min (Profile Scrape)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll Profile Scrape Job": {
+      "main": [
+        [
+          {
+            "node": "Scrape Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Done?": {
+      "main": [
+        [
+          {
+            "node": "Find Person's Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 1min (Profile Scrape)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Person's Email": {
+      "main": [
+        [
+          {
+            "node": "Build Enriched Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Enriched Record": {
+      "main": [
+        [
+          {
+            "node": "Update Lead Row In Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Lead Row In Sheet": {
+      "main": [
+        [
+          {
+            "node": "Item Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Item Processed": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Linkedin url": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1min (Profile Scrape)": {
+      "main": [
+        [
+          {
+            "node": "Poll Profile Scrape Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f4fcff71-ad87-4dda-b434-75be5eaa74ef",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "nodeGroups": [],
+  "id": "ctHTOQ4RHEJ5iaK8",
+  "tags": []
+}
