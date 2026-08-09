@@ -1,0 +1,843 @@
+{
+  "name": "The Ultimate LinkedIn Scraper AI Agent (LinkFinder AI)",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "642febea-cb1a-483a-bf7d-3ed1ff7a092e",
+      "name": "When Chat Message Received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        128,
+        224
+      ],
+      "webhookId": "e8b96e9c-dbd0-4597-ad1e-cad039740e17"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are the Ultimate LinkedIn Scraper Agent. You help the user find and enrich data on people and companies using your tools, without ever violating LinkedIn's terms or risking a ban (all lookups go through the LinkFinder AI API, not direct scraping).\n\nCOMPANY tools:\n- Find Company Website: company name → domain.\n- Find Company Phone: company name → contact phone number.\n- Find Company Email: company name → contact email.\n- Find Company Employee Count: company name → total headcount.\n- Find Company LinkedIn URL: company name → LinkedIn company page URL.\n- Find Company Employees: company domain → filtered employee list (can filter by department, seniority, and max count). May occasionally return a pending job for large lists — use Check Job Status if so.\n- Get LinkedIn Company Page Info: LinkedIn company page URL → detailed company data.\n- Get LinkedIn Company Employee Count: LinkedIn company page URL → headcount.\n\nPERSON tools:\n- Find Person's LinkedIn URL: full name + company → their LinkedIn profile URL. Use this when you have a name but no URL yet.\n- Get Full LinkedIn Profile Info: LinkedIn profile URL → full profile + any contact details it contains. ALWAYS returns a pending job (job_id + poll_url), never an instant result — you must poll it.\n- Find Person's Email: LinkedIn profile URL → professional email address.\n- Find Person's Phone: LinkedIn profile URL → phone number.\n- Reverse Email to LinkedIn URL: email address → the matching LinkedIn profile URL, for when you only have an email.\n\nUTILITY tools:\n- Check Job Status: given a poll_url from any tool, checks whether that pending job is done. Poll every few seconds until status is \"done\" (jobs expire after 10 minutes).\n- Save Profile To Sheet: persist a scraped/enriched profile to the results spreadsheet. Only call this once you have real, confirmed data.\n\nTypical full chain for one person: Find Person's LinkedIn URL (if you don't have it) → Get Full LinkedIn Profile Info (poll to completion) → Find Person's Email and/or Find Person's Phone if those weren't already in the profile data → Save Profile To Sheet.\n\nTypical full chain for a company: Find Company Website → Find Company Employees (filter by department/seniority as the user asks) → for each employee of interest, run the person chain above.\n\nAsync handling rule: whenever a tool response contains a job_id and poll_url instead of a final result, first call the \"Wait 60 Seconds\" code once, then call Check Job Status with that poll_url. If status is still \"processing\", call Wait 60 Seconds again before checking once more (jobs expire after 10 minutes, so don't wait more than a few times). Once status is \"done\", use the result and stop. Never tell the user \"still processing\" and stop — resolve it yourself, waiting between checks.\n\nAlways summarize findings clearly in chat: name/company, title, LinkedIn URL, domain, and any contact info found. If a lookup returns no data, say so plainly — don't invent details. Each LinkFinder AI call costs 1 credit even on a miss, so don't repeat a lookup you've already done in this conversation."
+        }
+      },
+      "id": "d0fca85c-247b-4083-beac-2dda57a67372",
+      "name": "LinkedIn Scraper Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        368,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 20
+      },
+      "id": "2c67051a-1440-4318-a413-bbadf85ba125",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Turn a company name into its website domain. Input: the company name, e.g. 'Tesla'.",
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_website"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', `the company name to resolve`, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "747a1df4-b2e5-4e77-b891-47323a46e64b",
+      "name": "Find Company Website",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        832,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Find a company's LinkedIn company page URL from its name. Input: the company name, e.g. 'Tesla'.",
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $fromAI('company_name', 'the company name', 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9dfc275d-360d-4122-a44e-7f50dddadaba",
+      "name": "Find Company LinkedIn URL",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1024,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "List employees at a company given its domain, optionally filtered by department and/or seniority, up to a max count. Input the domain (e.g. 'tesla.com'); optionally also a department (e.g. 'marketing'), seniority (e.g. 'director'), and max employee_count. May return a job_id/poll_url for large lists — if so, use Check Job Status.",
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "company_domain_to_employees"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $fromAI('domain', 'the company domain to look up employees for', 'string') }}"
+            },
+            {
+              "name": "department",
+              "value": "={{ $fromAI('department', 'optional department filter e.g. marketing, engineering', 'string') }}"
+            },
+            {
+              "name": "seniority",
+              "value": "={{ $fromAI('seniority', 'optional seniority filter e.g. director, manager', 'string') }}"
+            },
+            {
+              "name": "employee_count",
+              "value": "={{ $fromAI('employee_count', 'optional max number of results', 'number') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9b04dc7f-7e4b-460b-9a25-9688db8352d0",
+      "name": "Find Company Employees",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1184,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Extract detailed company data from a LinkedIn company page URL. Input: the LinkedIn company page URL, e.g. 'https://linkedin.com/company/tesla'.",
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_company_to_linkedin_info"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $fromAI('linkedin_company_url', 'the LinkedIn company page URL', 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ca254dcd-ea59-4811-beb7-d1f1e92ac3f1",
+      "name": "Get LinkedIn Company Page Info",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1344,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Find a person's LinkedIn profile URL from their full name and company. Input: name and company together as one string, e.g. 'Bill Gates Microsoft'.",
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "lead_full_name_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $fromAI('name_and_company', 'the person full name and company together, e.g. Bill Gates Microsoft', 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cbe746ac-4441-4f10-ab8d-95a37a054bec",
+      "name": "Find Person's LinkedIn URL",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        832,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Get full LinkedIn profile info (title, company, bio, and any contact details available) for a person given their LinkedIn profile URL. ALWAYS returns a job_id/poll_url — you must call Check Job Status afterward to get the real result.",
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_profile_to_linkedin_info"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $fromAI('linkedin_url', 'the LinkedIn profile URL to look up', 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "369ad3b9-d16a-4df2-96b3-cbfa158f5212",
+      "name": "Get Full LinkedIn Profile Info",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        992,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Find a person's professional email address from their LinkedIn profile URL. Input: the full LinkedIn profile URL, e.g. 'https://linkedin.com/in/john-doe'.",
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_profile_to_email"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $fromAI('linkedin_url', 'the LinkedIn profile URL', 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ba2319aa-5545-4290-b6ef-34d806b8cd5d",
+      "name": "Find Person's Email",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1152,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Find a person's phone number from their LinkedIn profile URL. Input: the full LinkedIn profile URL, e.g. 'https://linkedin.com/in/john-doe'.",
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "linkedin_profile_to_phone"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $fromAI('linkedin_url', 'the LinkedIn profile URL', 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "270d6fe5-3ab4-4fbf-b6ec-619ffa975b09",
+      "name": "Find Person's Phone",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1312,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Reverse-lookup a person's LinkedIn profile URL from their email address. Input: the email address, e.g. 'john@company.com'.",
+        "method": "POST",
+        "url": "https://api.linkfinderai.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "email_to_linkedin_url"
+            },
+            {
+              "name": "input_data",
+              "value": "={{ $fromAI('email', 'the email address to reverse-lookup', 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6350ac44-99f5-45ce-ba2c-a33051bd5c6b",
+      "name": "Reverse Email to LinkedIn URL",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1472,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Check the status of a pending LinkFinder AI job. Input: the poll_url returned by a previous tool call. Returns status 'processing' or 'done' (with the final result once done). Jobs expire after 10 minutes.",
+        "url": "={{ $fromAI('poll_url', 'the poll_url to check', 'string') }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "977aee1c-8c5d-4e6e-bc8c-5fae7ee009d7",
+      "name": "Check Job Status",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1632,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1bHXzE5Gtj0nU4ctAZAW15h3JgTV63H_SMw8I6DY9dT0",
+          "mode": "list",
+          "cachedResultName": "lead",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bHXzE5Gtj0nU4ctAZAW15h3JgTV63H_SMw8I6DY9dT0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bHXzE5Gtj0nU4ctAZAW15h3JgTV63H_SMw8I6DY9dT0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('email', `the contact email if found, otherwise empty`, 'string') }}",
+            "name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('name', `the contact name if found, otherwise empty`, 'string') }}",
+            "job": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('job', `the contact job title if found, otherwise empty`, 'string') }}",
+            "company": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('company', `the contact company if found, otherwise empty`, 'string') }}",
+            "headline": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('headline', `the contact headline if found, otherwise empty`, 'string') }}",
+            "location": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('location', `the contact location if found, otherwise empty`, 'string') }}",
+            "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('description', `the contact description if found, otherwise empty`, 'string') }}",
+            "seniority": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('seniority', `the contact seniority if found, otherwise empty`, 'string') }}",
+            "industry": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('industry', `the contact industry if found, otherwise empty`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "job",
+              "displayName": "job",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "headline",
+              "displayName": "headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "seniority",
+              "displayName": "seniority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "a8e6bf34-c160-4419-80aa-6e9be5a7a853",
+      "name": "Save Profile To Sheet",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        1792,
+        672
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o8l5meOpqkwP3c5u",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "=x-ai/grok-4.3",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        624
+      ],
+      "id": "bf56237c-f774-4108-b69a-afdde596ee65",
+      "name": "OpenAI Chat Model9",
+      "credentials": {
+        "openAiApi": {
+          "id": "1GzyTXCepEHAzTiq",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Pause for 60 seconds before checking a pending job again.",
+        "jsCode": "await new Promise(resolve => setTimeout(resolve, 60000));\nreturn \"Waited 60 seconds. Safe to check job status now.\";"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        576
+      ],
+      "id": "b465be73-b6d5-4e49-b9f4-59af1dc9fa0d",
+      "name": "wait 60 sec"
+    },
+    {
+      "parameters": {
+        "jsCode": "function parseProfileOutput(text) {\n  const result = {};\n\n  // First bold line at the top = the person's name\n  const nameMatch = text.match(/^\\*\\*(.+?)\\*\\*/m);\n  result.full_name = nameMatch ? nameMatch[1].trim() : null;\n\n  // Match lines like: - **Label**: value\n  const lines = text.split('\\n');\n  for (const line of lines) {\n    const fieldMatch = line.match(/^-?\\s*\\*\\*(.+?)\\*\\*:\\s*(.+)$/);\n    if (!fieldMatch) continue;\n\n    const label = fieldMatch[1].trim().toLowerCase().replace(/\\s+/g, '_');\n    const value = fieldMatch[2].trim();\n    result[label] = value;\n  }\n\n  // Anything mentioned as unavailable (e.g. \"No phone number...\") — capture as a note\n  const noteMatch = text.match(/No [^.\\n]+\\.(?:[^\\n]*)/);\n  if (noteMatch) {\n    result.note = noteMatch[0].trim();\n  }\n\n  return result;\n}\n\n// n8n Code node usage (\"Run Once for Each Item\"):\nconst raw = $input.item.json.output;\nreturn parseProfileOutput(raw);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        224
+      ],
+      "id": "10fd8d93-0f7a-44a6-8232-dad908ffef8d",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Chat Message Received": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Company Website": {
+      "ai_tool": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Company LinkedIn URL": {
+      "ai_tool": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Company Employees": {
+      "ai_tool": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LinkedIn Company Page Info": {
+      "ai_tool": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Person's LinkedIn URL": {
+      "ai_tool": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Full LinkedIn Profile Info": {
+      "ai_tool": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Person's Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Person's Phone": {
+      "ai_tool": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reverse Email to LinkedIn URL": {
+      "ai_tool": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Job Status": {
+      "ai_tool": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Profile To Sheet": {
+      "ai_tool": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model9": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "wait 60 sec": {
+      "ai_tool": [
+        [
+          {
+            "node": "LinkedIn Scraper Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Scraper Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "169d2326-0ea4-42ae-8a5d-6b91415f1512",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0ba15c473753d92c71f15fc9391d54bb141d91f940c0582da38b60426c3c2f10"
+  },
+  "nodeGroups": [],
+  "id": "Z09nWiWZPj7cKIjk",
+  "tags": []
+}
